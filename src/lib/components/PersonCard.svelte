@@ -20,7 +20,7 @@ let {
 const accent = {
   male: "border-sky-400",
   female: "border-rose-400",
-  other: "border-stone-400",
+  unknown: "border-stone-400",
 }[person.gender];
 
 const cardClass = `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 text-left shadow-md ${accent} ${

@@ -1,4 +1,4 @@
-export type Gender = "male" | "female" | "other";
+export type Gender = "male" | "female" | "unknown";
 
 export interface Person {
   id: string;
@@ -7,8 +7,20 @@ export interface Person {
   gender: Gender;
   birthDate?: string;
   deathDate?: string;
-  parentIds: string[];
-  spouseIds: string[];
+  parentFamilyId?: string;
+  familyIds: string[];
+}
+
+export interface Family {
+  id: string;
+  husbandId?: string;
+  wifeId?: string;
+  childrenIds: string[];
+}
+
+export interface TreeData {
+  people: Record<string, Person>;
+  families: Record<string, Family>;
 }
 
 export type PersonInput = Pick<

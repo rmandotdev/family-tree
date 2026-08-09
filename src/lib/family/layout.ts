@@ -1,4 +1,4 @@
-import type { Person } from "./types";
+import type { TreeData } from "./types";
 
 export const CARD_W = 160;
 export const CARD_H = 90;
@@ -27,57 +27,65 @@ export interface LayoutResult {
   height: number;
 }
 
-export function computeLayout(people: Record<string, Person>): LayoutResult {
+export function computeLayout(data: TreeData): LayoutResult {
+  const people = data.people;
+  const families = data.families;
   const list = Object.values(people);
   const byId = new Map(list.map((p) => [p.id, p]));
   const couples: CoupleLayout[] = [];
   const coupleOf = new Map<string, CoupleLayout>();
   const assigned = new Set<string>();
 
+  for (const fam of Object.values(families)) {
+    const parents = [fam.husbandId, fam.wifeId].filter(
+      (id): id is string => id !== undefined && byId.has(id),
+    );
+    if (parents.length === 0) continue;
+    const unassigned = parents.filter((id) => !assigned.has(id));
+    if (unassigned.length === 0) continue;
+    const couple: CoupleLayout = {
+      parents: unassigned,
+      x: 0,
+      y: 0,
+      children: fam.childrenIds.filter((id) => byId.has(id)),
+    };
+    couples.push(couple);
+    for (const id of unassigned) {
+      coupleOf.set(id, couple);
+      assigned.add(id);
+    }
+  }
+
   for (const p of list) {
     if (assigned.has(p.id)) continue;
-    const spouseId = p.spouseIds.find((id) => !assigned.has(id));
-    if (spouseId) {
-      const couple: CoupleLayout = {
-        parents: [p.id, spouseId],
-        x: 0,
-        y: 0,
-        children: [],
-      };
-      couples.push(couple);
-      coupleOf.set(p.id, couple);
-      coupleOf.set(spouseId, couple);
-      assigned.add(p.id);
-      assigned.add(spouseId);
-    } else {
-      const couple: CoupleLayout = {
-        parents: [p.id],
-        x: 0,
-        y: 0,
-        children: [],
-      };
-      couples.push(couple);
-      coupleOf.set(p.id, couple);
-      assigned.add(p.id);
-    }
+    const couple: CoupleLayout = {
+      parents: [p.id],
+      x: 0,
+      y: 0,
+      children: [],
+    };
+    couples.push(couple);
+    coupleOf.set(p.id, couple);
+    assigned.add(p.id);
   }
 
   const childCouples = new Set<CoupleLayout>();
   for (const p of list) {
     const childCouple = coupleOf.get(p.id);
-    const parentId = p.parentIds.find((id) => byId.has(id));
-    if (!childCouple || !parentId) continue;
-    const parentCouple = coupleOf.get(parentId);
-    if (parentCouple && parentCouple !== childCouple) {
-      if (!parentCouple.children.includes(p.id))
-        parentCouple.children.push(p.id);
-      childCouples.add(parentCouple);
-    }
+    if (!childCouple) continue;
+    const fam = p.parentFamilyId ? families[p.parentFamilyId] : undefined;
+    if (!fam) continue;
+    const parentCouples = [fam.husbandId, fam.wifeId]
+      .filter((id): id is string => id !== undefined)
+      .map((id) => coupleOf.get(id))
+      .filter((c): c is CoupleLayout => c !== undefined && c !== childCouple);
+    if (parentCouples.length > 0) childCouples.add(childCouple);
   }
 
   const roots = couples.filter((c) => !childCouples.has(c));
 
   const positions = new Map<string, Point>();
+  const visited = new Set<CoupleLayout>();
   let cursor = 0;
   let maxY = 0;
 
@@ -86,6 +94,8 @@ export function computeLayout(people: Record<string, Person>): LayoutResult {
   }
 
   function layoutCouple(couple: CoupleLayout, y: number) {
+    if (visited.has(couple)) return;
+    visited.add(couple);
     couple.y = y;
     if (couple.children.length === 0) {
       couple.x = cursor + coupleWidth(couple) / 2;

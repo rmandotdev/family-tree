@@ -1,5 +1,4 @@
-import { newId } from "./id";
-import type { Person } from "./types";
+import type { Family, Person, TreeData } from "./types";
 
 interface DemoArgs {
   firstName: string;
@@ -7,21 +6,24 @@ interface DemoArgs {
   gender: Person["gender"];
   birthDate?: string;
   deathDate?: string;
-  parentIds?: string[];
+  parentFamilyId?: string;
+  familyIds?: string[];
 }
 
-export function createDemoTree(): Record<string, Person> {
+export function createDemoTree(): TreeData {
   const people: Record<string, Person> = {};
+  const families: Record<string, Family> = {};
+
   const add = (args: DemoArgs): Person => {
     const person: Person = {
-      id: newId(),
+      id: crypto.randomUUID(),
       firstName: args.firstName,
       lastName: args.lastName,
       gender: args.gender,
       birthDate: args.birthDate,
       deathDate: args.deathDate,
-      parentIds: args.parentIds ?? [],
-      spouseIds: [],
+      parentFamilyId: args.parentFamilyId,
+      familyIds: args.familyIds ?? [],
     };
     people[person.id] = person;
     return person;
@@ -39,15 +41,12 @@ export function createDemoTree(): Record<string, Person> {
     gender: "female",
     birthDate: "1942-11-03",
   });
-  adam.spouseIds.push(eve.id);
-  eve.spouseIds.push(adam.id);
 
   const john = add({
     firstName: "John",
     lastName: "Smith",
     gender: "male",
     birthDate: "1965-02-20",
-    parentIds: [adam.id, eve.id],
   });
   const mary = add({
     firstName: "Mary",
@@ -55,29 +54,24 @@ export function createDemoTree(): Record<string, Person> {
     gender: "female",
     birthDate: "1967-07-15",
   });
-  john.spouseIds.push(mary.id);
-  mary.spouseIds.push(john.id);
 
-  add({
+  const bob = add({
     firstName: "Bob",
     lastName: "Smith",
     gender: "male",
     birthDate: "1990-08-01",
-    parentIds: [john.id, mary.id],
   });
   const alice = add({
     firstName: "Alice",
     lastName: "Smith",
     gender: "female",
     birthDate: "1992-03-19",
-    parentIds: [john.id, mary.id],
   });
-  add({
+  const charlie = add({
     firstName: "Charlie",
     lastName: "Smith",
     gender: "male",
     birthDate: "1995-12-25",
-    parentIds: [john.id, mary.id],
   });
 
   const david = add({
@@ -86,16 +80,34 @@ export function createDemoTree(): Record<string, Person> {
     gender: "male",
     birthDate: "1988-04-04",
   });
-  alice.spouseIds.push(david.id);
-  david.spouseIds.push(alice.id);
-
-  add({
+  const zoe = add({
     firstName: "Zoe",
     lastName: "Jones",
     gender: "female",
     birthDate: "2020-09-10",
-    parentIds: [alice.id, david.id],
   });
 
-  return people;
+  addFamily(adam, eve, [john]);
+  addFamily(john, mary, [bob, alice, charlie]);
+  addFamily(david, alice, [zoe]);
+
+  function addFamily(
+    husband: Person,
+    wife: Person,
+    children: Person[],
+  ): Family {
+    const family: Family = {
+      id: crypto.randomUUID(),
+      husbandId: husband.id,
+      wifeId: wife.id,
+      childrenIds: children.map((c) => c.id),
+    };
+    families[family.id] = family;
+    husband.familyIds.push(family.id);
+    wife.familyIds.push(family.id);
+    for (const child of children) child.parentFamilyId = family.id;
+    return family;
+  }
+
+  return { people, families };
 }

@@ -7,18 +7,41 @@ let { person, onClose }: { person: Person | null; onClose: () => void } =
 
 let firstName = $state(person?.firstName ?? "");
 let lastName = $state(person?.lastName ?? "");
-let gender = $state<Gender>(person?.gender ?? "other");
+let gender = $state<Gender>(person?.gender ?? "unknown");
 let birthDate = $state(person?.birthDate ?? "");
 let deathDate = $state(person?.deathDate ?? "");
-let parents = $state<Set<string>>(new Set(person?.parentIds ?? []));
-let spouseId = $state(person?.spouseIds[0] ?? "");
+let motherId = $state(
+  person?.parentFamilyId
+    ? (family.families[person.parentFamilyId]?.wifeId ?? "")
+    : "",
+);
+let fatherId = $state(
+  person?.parentFamilyId
+    ? (family.families[person.parentFamilyId]?.husbandId ?? "")
+    : "",
+);
+let spouseId = $state(person ? (family.spouseOf(person.id) ?? "") : "");
 let error = $state("");
 
-const candidates = $derived(family.list.filter((p) => p.id !== person?.id));
+const motherOptions = $derived(
+  family.list.filter(
+    (p) =>
+      p.gender === "female" && family.canBeParent(person?.id ?? null, p.id),
+  ),
+);
+
+const fatherOptions = $derived(
+  family.list.filter(
+    (p) => p.gender === "male" && family.canBeParent(person?.id ?? null, p.id),
+  ),
+);
 
 const spouseOptions = $derived(
-  candidates.filter(
-    (p) => p.spouseIds.length === 0 || p.spouseIds.includes(person?.id ?? ""),
+  family.list.filter(
+    (p) =>
+      p.id !== person?.id &&
+      family.canBeSpouse(person?.id ?? null, p.id) &&
+      (family.spouseOf(p.id) === null || family.spouseOf(p.id) === person?.id),
   ),
 );
 
@@ -37,7 +60,7 @@ function save() {
   };
   const target = person ?? family.addPerson(input);
   if (person) family.updatePerson(target.id, input);
-  family.setParents(target.id, [...parents]);
+  family.setParents(target.id, motherId || undefined, fatherId || undefined);
   family.setSpouse(target.id, spouseId || null);
   onClose();
 }
@@ -107,7 +130,7 @@ function remove() {
           >
             <option value="male">Male</option>
             <option value="female">Female</option>
-            <option value="other">Other</option>
+            <option value="unknown">Unknown</option>
           </select>
         </label>
         <label class="block text-sm">
@@ -143,34 +166,36 @@ function remove() {
         </select>
       </label>
 
-      <fieldset class="text-sm">
-        <legend class="font-medium text-stone-700">Parents</legend>
-        <div
-          class="mt-1 max-h-40 space-y-1 overflow-y-auto rounded-md border border-stone-200 p-2"
-        >
-          {#if candidates.length === 0}
-            <p class="text-stone-400">No other people yet.</p>
-          {/if}
-          {#each candidates as candidate (candidate.id)}
-            <label class="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={parents.has(candidate.id)}
-                onchange={(e) => {
-                  if (e.currentTarget.checked) {
-                    parents.add(candidate.id);
-                  } else {
-                    parents.delete(candidate.id);
-                  }
-                }}
-              />
-              <span class="truncate text-stone-700">
-                {candidate.firstName} {candidate.lastName}
-              </span>
-            </label>
-          {/each}
-        </div>
-      </fieldset>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block text-sm">
+          <span class="font-medium text-stone-700">Mother</span>
+          <select
+            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+            bind:value={motherId}
+          >
+            <option value="">—</option>
+            {#each motherOptions as option (option.id)}
+              <option value={option.id}>
+                {option.firstName} {option.lastName}
+              </option>
+            {/each}
+          </select>
+        </label>
+        <label class="block text-sm">
+          <span class="font-medium text-stone-700">Father</span>
+          <select
+            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+            bind:value={fatherId}
+          >
+            <option value="">—</option>
+            {#each fatherOptions as option (option.id)}
+              <option value={option.id}>
+                {option.firstName} {option.lastName}
+              </option>
+            {/each}
+          </select>
+        </label>
+      </div>
 
       {#if error}
         <p class="text-sm text-red-600">{error}</p>

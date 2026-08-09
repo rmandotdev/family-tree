@@ -6,7 +6,9 @@ import FamilyCanvas from "./FamilyCanvas.svelte";
 import PersonCard from "./PersonCard.svelte";
 import PersonEditor from "./PersonEditor.svelte";
 
-const layout = $derived(computeLayout(family.people));
+const layout = $derived(
+  computeLayout({ people: family.people, families: family.families }),
+);
 const selected = $derived(family.selected);
 
 let editing = $state<{ id: string | null } | null>(null);
