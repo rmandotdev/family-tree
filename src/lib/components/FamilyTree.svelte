@@ -235,6 +235,7 @@ function goBack() {
             canToggleParents={personActions?.canCollapseParents ?? false}
             motherMissing={fam?.wifeId === undefined}
             fatherMissing={fam?.husbandId === undefined}
+            isPov={person.id === pov.focalId}
             onToggleMenu={() => toggleMenu(person.id)}
             onAction={(action) => handleAction(person.id, action)}
           />

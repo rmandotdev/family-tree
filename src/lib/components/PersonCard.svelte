@@ -27,6 +27,7 @@ let {
   canToggleParents,
   motherMissing,
   fatherMissing,
+  isPov,
   onToggleMenu,
   onAction,
 }: {
@@ -41,6 +42,7 @@ let {
   canToggleParents: boolean;
   motherMissing: boolean;
   fatherMissing: boolean;
+  isPov: boolean;
   onToggleMenu: () => void;
   onAction: (action: CardAction) => void;
 } = $props();
@@ -92,13 +94,15 @@ const lifespan = $derived(formatLifespan(person));
       >
         Edit person
       </button>
-      <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
-        type="button"
-        onclick={() => onAction("focus")}
-      >
-        Go to the person's tree
-      </button>
+      {#if !isPov}
+        <button
+          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          type="button"
+          onclick={() => onAction("focus")}
+        >
+          Go to the person's tree
+        </button>
+      {/if}
       <div class="my-1 border-t border-stone-100"></div>
       <button
         class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
