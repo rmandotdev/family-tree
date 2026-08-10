@@ -244,4 +244,33 @@ describe("computeLayout", () => {
     expect(layout.width).toBe(CARD_W * 2 + CARD_GAP + MARGIN * 2);
     expect(layout.height).toBe(ROW_H * 2 + CARD_H + MARGIN * 2);
   });
+
+  it("aligns a person's parents correctly when their spouse's family branch pushes them deeper", () => {
+    const g1 = person("g1", "male");
+    const gm1 = person("gm1", "female");
+    const p1 = person("p1", "male");
+    const p2 = person("p2", "female");
+    const child1 = person("child1", "male");
+    const parent1 = person("parent1", "male");
+    const parent2 = person("parent2", "female");
+    const sibling1 = person("sibling1", "male");
+
+    const layout = computeLayout(
+      tree(
+        [g1, gm1, p1, p2, child1, parent1, parent2, sibling1],
+        [
+          family("f1", g1.id, gm1.id, [p1.id]),
+          family("f2", p1.id, p2.id, [child1.id]),
+          family("f3", parent1.id, parent2.id, [child1.id, sibling1.id]),
+        ],
+      ),
+    );
+
+    const parent1Y = pos(layout, parent1.id).y;
+    const child1Y = pos(layout, child1.id).y;
+    const sibling1Y = pos(layout, sibling1.id).y;
+
+    expect(parent1Y).toBe(child1Y - ROW_H);
+    expect(sibling1Y).toBe(child1Y);
+  });
 });

@@ -71,24 +71,52 @@ export function computeLayout(data: TreeData): LayoutResult {
     assigned.add(p.id);
   }
 
-  const childCouples = new Set<CoupleLayout>();
-  for (const p of list) {
-    const childCouple = coupleOf.get(p.id);
-    if (!childCouple) continue;
-    const fam = p.parentFamilyId ? families[p.parentFamilyId] : undefined;
-    if (!fam) continue;
-    const parentCouples = [fam.husbandId, fam.wifeId]
-      .filter((id): id is string => id !== undefined)
-      .map((id) => coupleOf.get(id))
-      .filter((c): c is CoupleLayout => c !== undefined && c !== childCouple);
-    if (parentCouples.length > 0) childCouples.add(childCouple);
+  const parentCouples = new Map<CoupleLayout, CoupleLayout[]>();
+  const childCouples = new Map<CoupleLayout, CoupleLayout[]>();
+  for (const couple of couples) {
+    parentCouples.set(couple, []);
+    childCouples.set(couple, []);
+  }
+  for (const couple of couples) {
+    for (const childId of couple.children) {
+      const child = coupleOf.get(childId);
+      if (child && child !== couple) {
+        parentCouples.get(child)?.push(couple);
+        childCouples.get(couple)?.push(child);
+      }
+    }
   }
 
-  const roots = couples.filter((c) => !childCouples.has(c));
+  const rows = new Map<CoupleLayout, number>(couples.map((c) => [c, 0]));
+  for (let i = 0; i <= couples.length; i++) {
+    let changed = false;
+    for (const couple of couples) {
+      const r = rows.get(couple) ?? 0;
+      for (const child of childCouples.get(couple) ?? []) {
+        if ((rows.get(child) ?? 0) < r + 1) {
+          rows.set(child, r + 1);
+          changed = true;
+        }
+      }
+      for (const parent of parentCouples.get(couple) ?? []) {
+        if ((rows.get(parent) ?? 0) < r - 1) {
+          rows.set(parent, r - 1);
+          changed = true;
+        }
+      }
+    }
+    if (!changed) break;
+  }
+  for (const couple of couples) couple.row = rows.get(couple) ?? 0;
+
+  const roots = couples.filter(
+    (c) => (parentCouples.get(c) ?? []).length === 0,
+  );
   const visited = new Set<CoupleLayout>();
   const occupied = new Map<number, Array<[number, number]>>();
-  let maxRow = 0;
   let cursor = 0;
+  let maxRow = 0;
+  for (const couple of couples) maxRow = Math.max(maxRow, couple.row);
 
   function cols(couple: CoupleLayout): number {
     return couple.parents.length;
@@ -126,11 +154,9 @@ export function computeLayout(data: TreeData): LayoutResult {
     return best === Infinity ? (lo + hi) / 2 : best;
   }
 
-  function layoutCouple(couple: CoupleLayout, row: number) {
+  function layoutCouple(couple: CoupleLayout) {
     if (visited.has(couple)) return;
     visited.add(couple);
-    couple.row = row;
-    maxRow = Math.max(maxRow, row);
     const n = cols(couple);
     if (couple.children.length === 0) {
       couple.col = cursor + n / 2;
@@ -141,17 +167,7 @@ export function computeLayout(data: TreeData): LayoutResult {
 
     for (const childId of couple.children) {
       const child = coupleOf.get(childId);
-      if (child) layoutCouple(child, row + 1);
-    }
-
-    let topChildRow = Infinity;
-    for (const childId of couple.children) {
-      const child = coupleOf.get(childId);
-      if (child) topChildRow = Math.min(topChildRow, child.row);
-    }
-    if (topChildRow !== Infinity) {
-      couple.row = topChildRow - 1;
-      maxRow = Math.max(maxRow, couple.row);
+      if (child) layoutCouple(child);
     }
 
     const first = coupleOf.get(couple.children[0]);
@@ -175,7 +191,7 @@ export function computeLayout(data: TreeData): LayoutResult {
     record(couple.row, couple.col - n / 2, couple.col + n / 2);
   }
 
-  for (const root of roots) layoutCouple(root, 0);
+  for (const root of roots) layoutCouple(root);
 
   let minLeft = 0;
   for (const couple of couples) {
