@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { filterCollapsed } from "./filter";
+import { computeSubtree } from "./subtree";
 import type { Family, Gender, Person, TreeData } from "./types";
 
 function person(id: string, gender: Gender = "unknown"): Person {
@@ -63,7 +64,7 @@ describe("filterCollapsed", () => {
     const out = filterCollapsed(t, new Set(["john"]), new Set());
 
     expect(ids(out)).toEqual(
-      ["adam", "eve", "john", "mary", "mark", "david", "evelu"].sort(),
+      ["adam", "david", "eve", "john", "mark", "mary"].sort(),
     );
     expect(out.families).toHaveProperty("f1");
     expect(out.families).toHaveProperty("f2");
@@ -109,5 +110,19 @@ describe("filterCollapsed", () => {
     const t = demoTree();
     const out = filterCollapsed(t, new Set(["bob"]), new Set(["mark"]));
     expect(out).toBe(t);
+  });
+
+  it("drops in-laws detached by a collapsed branch in a subtree view", () => {
+    const t = demoTree();
+    const mark = t.people.mark;
+    const subtree = computeSubtree(t, mark.id);
+    expect(ids(subtree)).toEqual(["alice", "david", "mark", "zoe"]);
+
+    const out = filterCollapsed(subtree, new Set(["mark"]), new Set());
+
+    expect(ids(out)).toEqual(["mark"]);
+    expect(out.people).not.toHaveProperty("alice");
+    expect(out.families).toHaveProperty("f5");
+    expect(out.families).not.toHaveProperty("f3");
   });
 });

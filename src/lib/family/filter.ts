@@ -55,9 +55,6 @@ export function filterCollapsed(
 
   const kept = new Set(Object.keys(people).filter((id) => !pruned.has(id)));
 
-  const outPeople: Record<string, Person> = {};
-  for (const id of kept) outPeople[id] = people[id];
-
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
@@ -68,6 +65,27 @@ export function filterCollapsed(
     if (keptParents.length !== parentIds.length) continue;
     if (keptParents.length === 0 && keptChildren.length === 0) continue;
     outFamilies[fam.id] = fam;
+  }
+
+  const connected = new Set<string>();
+  for (const fam of Object.values(outFamilies)) {
+    for (const id of [fam.husbandId, fam.wifeId]) {
+      if (id !== undefined && kept.has(id)) connected.add(id);
+    }
+    for (const id of fam.childrenIds) {
+      if (kept.has(id)) connected.add(id);
+    }
+  }
+
+  const outPeople: Record<string, Person> = {};
+  for (const id of kept) {
+    if (
+      connected.has(id) ||
+      collapsedChildren.has(id) ||
+      collapsedParents.has(id)
+    ) {
+      outPeople[id] = people[id];
+    }
   }
 
   return { people: outPeople, families: outFamilies };
