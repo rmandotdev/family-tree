@@ -1,6 +1,6 @@
 <script lang="ts">
 import { family } from "$lib/family/family.svelte";
-import { filterCollapsed } from "$lib/family/filter";
+import { branchActions, filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
 import { computeSubtree } from "$lib/family/subtree";
 import type { Gender } from "$lib/family/types";
@@ -28,8 +28,11 @@ let addRelativePreset = $state<{
 const fullData = $derived({ people: family.people, families: family.families });
 const subtreeData = $derived(computeSubtree(fullData, pov.focalId));
 const viewData = $derived(
-  filterCollapsed(subtreeData, collapsedChildren, collapsedParents),
+  filterCollapsed(subtreeData, collapsedChildren, collapsedParents, {
+    focalId: pov.focalId,
+  }),
 );
+const actions = $derived(branchActions(subtreeData, pov.focalId));
 const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
 const focal = $derived(family.people[pov.focalId] ?? null);
@@ -186,6 +189,7 @@ function goBack() {
       {#each visibleList as person (person.id)}
         {@const fam = person.parentFamilyId ? family.families[person.parentFamilyId] : undefined}
         {@const pos = layout.positions.get(person.id)}
+        {@const personActions = actions.get(person.id)}
         {#if pos}
           <PersonCard
             {person}
@@ -195,6 +199,8 @@ function goBack() {
             menuOpen={openMenuId === person.id}
             childrenCollapsed={collapsedChildren.has(person.id)}
             parentsCollapsed={collapsedParents.has(person.id)}
+            canToggleChildren={personActions?.canCollapseChildren ?? false}
+            canToggleParents={personActions?.canCollapseParents ?? false}
             motherMissing={fam?.wifeId === undefined}
             fatherMissing={fam?.husbandId === undefined}
             onToggleMenu={() => toggleMenu(person.id)}

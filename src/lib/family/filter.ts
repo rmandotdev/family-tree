@@ -1,21 +1,20 @@
 import type { Family, Person, TreeData } from "./types";
 
-export function filterCollapsed(
-  data: TreeData,
-  collapsedChildren: Set<string>,
-  collapsedParents: Set<string>,
-): TreeData {
-  if (collapsedChildren.size === 0 && collapsedParents.size === 0) {
-    return data;
-  }
+interface Relations {
+  parents: Map<string, string[]>;
+  children: Map<string, string[]>;
+  spouses: Map<string, string[]>;
+}
 
+function relationsOf(data: TreeData): Relations {
   const { people, families } = data;
-
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
+  const spouses = new Map<string, string[]>();
   for (const p of Object.values(people)) {
     parents.set(p.id, []);
     children.set(p.id, []);
+    spouses.set(p.id, []);
   }
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
@@ -28,6 +27,76 @@ export function filterCollapsed(
         children.get(pid)?.push(childId);
       }
     }
+    if (parentIds.length === 2) {
+      spouses.get(parentIds[0])?.push(parentIds[1]);
+      spouses.get(parentIds[1])?.push(parentIds[0]);
+    }
+  }
+  return { parents, children, spouses };
+}
+
+function descendantCone(data: TreeData, focalId: string): Set<string> {
+  const { children, spouses } = relationsOf(data);
+  const result = new Set<string>();
+  const queue = [focalId];
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined) continue;
+    for (const cid of children.get(id) ?? []) {
+      if (result.has(cid)) continue;
+      result.add(cid);
+      queue.push(cid);
+    }
+  }
+  for (const id of [...result]) {
+    for (const sid of spouses.get(id) ?? []) result.add(sid);
+  }
+  return result;
+}
+
+export interface BranchActions {
+  canCollapseParents: boolean;
+  canCollapseChildren: boolean;
+}
+
+export function branchActions(
+  data: TreeData,
+  focalId: string,
+): Map<string, BranchActions> {
+  const { parents, children } = relationsOf(data);
+  const cone = descendantCone(data, focalId);
+  const result = new Map<string, BranchActions>();
+  for (const id of Object.keys(data.people)) {
+    result.set(id, {
+      canCollapseParents: (parents.get(id)?.length ?? 0) > 0 && !cone.has(id),
+      canCollapseChildren: (children.get(id)?.length ?? 0) > 0,
+    });
+  }
+  return result;
+}
+
+export interface FilterCollapsedOptions {
+  focalId?: string | null;
+}
+
+export function filterCollapsed(
+  data: TreeData,
+  collapsedChildren: Set<string>,
+  collapsedParents: Set<string>,
+  options: FilterCollapsedOptions = {},
+): TreeData {
+  if (collapsedChildren.size === 0 && collapsedParents.size === 0) {
+    return data;
+  }
+
+  const { people, families } = data;
+  const { parents, children } = relationsOf(data);
+
+  const focalId = options.focalId ?? null;
+  const protectedAncestors = new Set<string>();
+  if (focalId && people[focalId]) {
+    protectedAncestors.add(focalId);
+    for (const id of descendantCone(data, focalId)) protectedAncestors.add(id);
   }
 
   const pruned = new Set<string>();
@@ -42,6 +111,7 @@ export function filterCollapsed(
 
   function pruneAncestors(id: string) {
     for (const pid of parents.get(id) ?? []) {
+      if (protectedAncestors.has(pid)) continue;
       if (pruned.has(pid)) continue;
       pruned.add(pid);
       pruneAncestors(pid);
@@ -54,6 +124,7 @@ export function filterCollapsed(
   if (pruned.size === 0) return data;
 
   const kept = new Set(Object.keys(people).filter((id) => !pruned.has(id)));
+  if (focalId && people[focalId]) kept.add(focalId);
 
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
@@ -82,7 +153,8 @@ export function filterCollapsed(
     if (
       connected.has(id) ||
       collapsedChildren.has(id) ||
-      collapsedParents.has(id)
+      collapsedParents.has(id) ||
+      id === focalId
     ) {
       outPeople[id] = people[id];
     }

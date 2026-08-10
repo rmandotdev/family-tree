@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { filterCollapsed } from "./filter";
+import { branchActions, filterCollapsed } from "./filter";
 import { computeSubtree } from "./subtree";
 import type { Family, Gender, Person, TreeData } from "./types";
 
@@ -125,5 +125,112 @@ describe("filterCollapsed", () => {
     expect(out.people).not.toHaveProperty("alice");
     expect(out.families).toHaveProperty("f5");
     expect(out.families).not.toHaveProperty("f3");
+  });
+
+  it("never hides the POV person when collapsing a parents branch", () => {
+    const t = demoTree();
+    const mark = t.people.mark;
+    const subtree = computeSubtree(t, mark.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["david"]), {
+      focalId: mark.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "david", "mark", "zoe"]);
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
+  });
+
+  it("collapsing a descendant's parents branch keeps the POV and the spine", () => {
+    const t = demoTree();
+    const mark = t.people.mark;
+    const subtree = computeSubtree(t, mark.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["zoe"]), {
+      focalId: mark.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "david", "mark", "zoe"]);
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
+  });
+
+  it("still hides ancestors that do not include the POV person", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["john"]), {
+      focalId: zoe.id,
+    });
+
+    expect(out.people).not.toHaveProperty("adam");
+    expect(out.people).not.toHaveProperty("eve");
+    expect(out.people).toHaveProperty("john");
+    expect(out.people).toHaveProperty("mary");
+    expect(out.people).toHaveProperty("zoe");
+    expect(out.people).toHaveProperty("david");
+    expect(out.people).toHaveProperty("alice");
+    expect(out.people).toHaveProperty("mark");
+    expect(out.people).toHaveProperty("bob");
+    expect(out.families).not.toHaveProperty("f1");
+    expect(out.families).toHaveProperty("f2");
+  });
+
+  it("keeps the POV person when a children branch containing them is collapsed", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+
+    const out = filterCollapsed(subtree, new Set(["alice"]), new Set(), {
+      focalId: zoe.id,
+    });
+
+    expect(out.people).toHaveProperty("zoe");
+    expect(out.people).toHaveProperty("alice");
+    expect(out.people).toHaveProperty("david");
+    expect(out.families).toHaveProperty("f3");
+  });
+
+  it("does not offer parents-collapse to people connected only by the child branch", () => {
+    const t = demoTree();
+    const mark = t.people.mark;
+    const subtree = computeSubtree(t, mark.id);
+    const actions = branchActions(subtree, mark.id);
+
+    expect(actions.get("mark")?.canCollapseParents).toBe(false);
+    expect(actions.get("david")?.canCollapseParents).toBe(false);
+    expect(actions.get("alice")?.canCollapseParents).toBe(false);
+    expect(actions.get("zoe")?.canCollapseParents).toBe(false);
+  });
+
+  it("offers parents-collapse to people connected via the parent branch", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+    const actions = branchActions(subtree, zoe.id);
+
+    expect(actions.get("zoe")?.canCollapseParents).toBe(true);
+    expect(actions.get("david")?.canCollapseParents).toBe(true);
+    expect(actions.get("alice")?.canCollapseParents).toBe(true);
+    expect(actions.get("john")?.canCollapseParents).toBe(true);
+    expect(actions.get("bob")?.canCollapseParents).toBe(true);
+    expect(actions.get("mark")?.canCollapseParents).toBe(false);
+    expect(actions.get("adam")?.canCollapseParents).toBe(false);
+    expect(actions.get("eve")?.canCollapseParents).toBe(false);
+  });
+
+  it("offers children-collapse only to people with children", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+    const actions = branchActions(subtree, zoe.id);
+
+    expect(actions.get("zoe")?.canCollapseChildren).toBe(false);
+    expect(actions.get("mark")?.canCollapseChildren).toBe(true);
+    expect(actions.get("john")?.canCollapseChildren).toBe(true);
+    expect(actions.get("charlie")?.canCollapseChildren).toBe(true);
+    expect(actions.get("bob")?.canCollapseChildren).toBe(false);
+    expect(actions.get("david")?.canCollapseChildren).toBe(true);
   });
 });
