@@ -54,6 +54,33 @@ function descendantCone(data: TreeData, focalId: string): Set<string> {
   return result;
 }
 
+function upClosure(ids: string[], parents: Map<string, string[]>): Set<string> {
+  const result = new Set<string>();
+  const queue = [...ids];
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined || result.has(id)) continue;
+    result.add(id);
+    queue.push(...(parents.get(id) ?? []));
+  }
+  return result;
+}
+
+function downClosure(
+  ids: string[],
+  children: Map<string, string[]>,
+): Set<string> {
+  const result = new Set<string>();
+  const queue = [...ids];
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined || result.has(id)) continue;
+    result.add(id);
+    queue.push(...(children.get(id) ?? []));
+  }
+  return result;
+}
+
 export interface BranchActions {
   canCollapseParents: boolean;
   canCollapseChildren: boolean;
@@ -93,10 +120,14 @@ export function filterCollapsed(
   const { parents, children } = relationsOf(data);
 
   const focalId = options.focalId ?? null;
-  const protectedAncestors = new Set<string>();
+  const focalAncestors =
+    focalId && people[focalId]
+      ? upClosure(parents.get(focalId) ?? [], parents)
+      : new Set<string>();
+  const protectedSpine = new Set<string>();
   if (focalId && people[focalId]) {
-    protectedAncestors.add(focalId);
-    for (const id of descendantCone(data, focalId)) protectedAncestors.add(id);
+    protectedSpine.add(focalId);
+    for (const id of descendantCone(data, focalId)) protectedSpine.add(id);
   }
 
   const pruned = new Set<string>();
@@ -109,17 +140,25 @@ export function filterCollapsed(
     }
   }
 
-  function pruneAncestors(id: string) {
-    for (const pid of parents.get(id) ?? []) {
-      if (protectedAncestors.has(pid)) continue;
+  function pruneParents(id: string) {
+    const ancestors = upClosure(parents.get(id) ?? [], parents);
+    const keep = downClosure([id], children);
+    const collateral = downClosure([...ancestors], children);
+    const protectedCollateral = new Set<string>();
+    for (const pid of focalAncestors) {
+      if (!ancestors.has(pid)) protectedCollateral.add(pid);
+    }
+    for (const pid of collateral) {
+      if (keep.has(pid)) continue;
+      if (protectedSpine.has(pid)) continue;
+      if (protectedCollateral.has(pid)) continue;
       if (pruned.has(pid)) continue;
       pruned.add(pid);
-      pruneAncestors(pid);
     }
   }
 
   for (const id of collapsedChildren) pruneDescendants(id);
-  for (const id of collapsedParents) pruneAncestors(id);
+  for (const id of collapsedParents) pruneParents(id);
 
   if (pruned.size === 0) return data;
 

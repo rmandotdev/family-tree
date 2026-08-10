@@ -88,22 +88,11 @@ describe("filterCollapsed", () => {
     const t = demoTree();
     const out = filterCollapsed(t, new Set(), new Set(["bob"]));
 
-    expect(ids(out)).toEqual(
-      [
-        "bob",
-        "alice",
-        "charlie",
-        "david",
-        "zoe",
-        "mark",
-        "evelu",
-        "fred",
-      ].sort(),
-    );
+    expect(ids(out)).toEqual(["bob", "david", "mark"]);
     expect(out.families).not.toHaveProperty("f1");
     expect(out.families).not.toHaveProperty("f2");
-    expect(out.families).toHaveProperty("f3");
-    expect(out.families).toHaveProperty("f4");
+    expect(out.families).not.toHaveProperty("f3");
+    expect(out.families).not.toHaveProperty("f4");
     expect(out.families).toHaveProperty("f5");
   });
 
@@ -190,6 +179,56 @@ describe("filterCollapsed", () => {
     expect(out.people).toHaveProperty("alice");
     expect(out.people).toHaveProperty("david");
     expect(out.families).toHaveProperty("f3");
+  });
+
+  it("hides the whole parents branch including collaterals for the POV person", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["zoe"]), {
+      focalId: zoe.id,
+    });
+
+    expect(ids(out)).toEqual(["zoe"]);
+    expect(out.families).toEqual({});
+  });
+
+  it("hides a parent's siblings and their families when collapsing their parents", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["alice"]), {
+      focalId: zoe.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "david", "mark", "zoe"]);
+    expect(out.people).not.toHaveProperty("bob");
+    expect(out.people).not.toHaveProperty("charlie");
+    expect(out.people).not.toHaveProperty("evelu");
+    expect(out.people).not.toHaveProperty("fred");
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
+    expect(out.families).not.toHaveProperty("f4");
+  });
+
+  it("keeps the POV's direct family when collapsing an off-branch person's parents", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const subtree = computeSubtree(t, zoe.id);
+
+    const out = filterCollapsed(subtree, new Set(), new Set(["bob"]), {
+      focalId: zoe.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "bob", "david", "mark", "zoe"]);
+    expect(out.people).not.toHaveProperty("charlie");
+    expect(out.people).not.toHaveProperty("evelu");
+    expect(out.people).not.toHaveProperty("fred");
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
+    expect(out.families).not.toHaveProperty("f4");
   });
 
   it("does not offer parents-collapse to people connected only by the child branch", () => {
