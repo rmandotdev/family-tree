@@ -140,5 +140,5 @@ export function createDemoTree(): TreeData {
     return family;
   }
 
-  return { people, families };
+  return { people, families, sourceId: zoe.id };
 }

@@ -11,7 +11,7 @@ import PersonCard from "./PersonCard.svelte";
 import PersonEditor from "./PersonEditor.svelte";
 import { canvas } from "./pan.svelte";
 
-let pov = $state<{ focalId: string } | null>(null);
+let pov = $state<{ focalId: string }>({ focalId: family.sourceId ?? "" });
 let collapsedChildren = $state<Set<string>>(new Set());
 let collapsedParents = $state<Set<string>>(new Set());
 let openMenuId = $state<string | null>(null);
@@ -26,15 +26,14 @@ let addRelativePreset = $state<{
 } | null>(null);
 
 const fullData = $derived({ people: family.people, families: family.families });
-const subtreeData = $derived(
-  pov ? computeSubtree(fullData, pov.focalId) : fullData,
-);
+const subtreeData = $derived(computeSubtree(fullData, pov.focalId));
 const viewData = $derived(
   filterCollapsed(subtreeData, collapsedChildren, collapsedParents),
 );
 const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
-const focal = $derived(pov ? (family.people[pov.focalId] ?? null) : null);
+const focal = $derived(family.people[pov.focalId] ?? null);
+const onSource = $derived(pov.focalId === family.sourceId);
 const selected = $derived(family.selected);
 
 function toggleMenu(id: string) {
@@ -143,6 +142,10 @@ function handleAction(personId: string, action: CardAction) {
     case "toggleParents":
       collapsedParents = toggleSet(collapsedParents, personId);
       break;
+    case "makeSource":
+      family.setSource(personId);
+      family.select(personId);
+      break;
   }
 }
 
@@ -153,8 +156,9 @@ function toggleSet(set: Set<string>, id: string): Set<string> {
   return next;
 }
 
-function exitPov() {
-  pov = null;
+function goBack() {
+  pov = { focalId: family.sourceId ?? "" };
+  family.select(family.sourceId);
   recenterKey += 1;
 }
 </script>
@@ -223,21 +227,23 @@ function exitPov() {
       >
         Edit
       </button>
-      <button
-        class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
-        type="button"
-        onclick={() => {
-          if (window.confirm(`Delete ${selected.firstName} ${selected.lastName}?`)) {
-            family.deletePerson(selected.id);
-          }
-        }}
-      >
-        Delete
-      </button>
+      {#if selected.id !== family.sourceId}
+        <button
+          class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
+          type="button"
+          onclick={() => {
+            if (window.confirm(`Delete ${selected.firstName} ${selected.lastName}?`)) {
+              family.deletePerson(selected.id);
+            }
+          }}
+        >
+          Delete
+        </button>
+      {/if}
     {/if}
   </div>
 
-  {#if pov && focal}
+  {#if focal && !onSource}
     <div
       class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-stone-200 bg-white/95 px-4 py-2 shadow-md"
     >
@@ -247,9 +253,9 @@ function exitPov() {
       <button
         class="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700"
         type="button"
-        onclick={exitPov}
+        onclick={goBack}
       >
-        Show full tree
+        Go back
       </button>
     </div>
   {/if}

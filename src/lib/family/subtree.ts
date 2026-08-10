@@ -14,7 +14,7 @@ export function computeSubtree(
   const { people, families } = data;
   const maxDepth = options.maxDepth ?? DEFAULT_MAX_DEPTH;
 
-  if (!people[focalId]) return { people: {}, families: {} };
+  if (!people[focalId]) return { people: {}, families: {}, sourceId: null };
 
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
@@ -110,5 +110,5 @@ export function computeSubtree(
     outFamilies[fam.id] = fam;
   }
 
-  return { people: outPeople, families: outFamilies };
+  return { people: outPeople, families: outFamilies, sourceId: data.sourceId };
 }

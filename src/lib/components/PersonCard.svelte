@@ -12,7 +12,8 @@ export type CardAction =
   | "addMother"
   | "addFather"
   | "toggleChildren"
-  | "toggleParents";
+  | "toggleParents"
+  | "makeSource";
 
 let {
   person,
@@ -150,6 +151,14 @@ const lifespan = $derived(formatLifespan(person));
       >
         {parentsCollapsed ? "Expand" : "Collapse"}
         parents branch
+      </button>
+      <div class="my-1 border-t border-stone-100"></div>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("makeSource")}
+      >
+        Set as tree source
       </button>
     </div>
   {/if}

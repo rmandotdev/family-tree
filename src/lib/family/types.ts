@@ -21,6 +21,7 @@ export interface Family {
 export interface TreeData {
   people: Record<string, Person>;
   families: Record<string, Family>;
+  sourceId: string | null;
 }
 
 export type PersonInput = Pick<

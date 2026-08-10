@@ -4,6 +4,7 @@ export interface FamilyState {
   people: Record<string, Person>;
   families: Record<string, Family>;
   selectedId: { value: string | null };
+  sourceId: { value: string | null };
 }
 
 export function createFamily(state: FamilyState, persist: () => void) {
@@ -16,6 +17,7 @@ export function createFamily(state: FamilyState, persist: () => void) {
       familyIds: [],
     };
     people[person.id] = person;
+    if (state.sourceId.value === null) state.sourceId.value = person.id;
     state.selectedId.value = person.id;
     persist();
     return person;
@@ -156,6 +158,7 @@ export function createFamily(state: FamilyState, persist: () => void) {
   }
 
   function deletePerson(id: string) {
+    if (id === state.sourceId.value) return;
     const person = people[id];
     if (!person) return;
 
@@ -360,6 +363,12 @@ export function createFamily(state: FamilyState, persist: () => void) {
     if (changed) persist();
   }
 
+  function setSource(id: string) {
+    if (!people[id]) return;
+    state.sourceId.value = id;
+    persist();
+  }
+
   return {
     get people() {
       return people;
@@ -376,12 +385,16 @@ export function createFamily(state: FamilyState, persist: () => void) {
     get selected() {
       return state.selectedId.value ? people[state.selectedId.value] : null;
     },
+    get sourceId() {
+      return state.sourceId.value;
+    },
     select(id: string | null) {
       state.selectedId.value = id;
     },
     addPerson,
     updatePerson,
     deletePerson,
+    setSource,
     setParents,
     setSpouse,
     sanitize,

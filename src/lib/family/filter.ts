@@ -88,5 +88,9 @@ export function filterCollapsed(
     }
   }
 
-  return { people: outPeople, families: outFamilies };
+  return {
+    people: outPeople,
+    families: outFamilies,
+    sourceId: data.sourceId,
+  };
 }

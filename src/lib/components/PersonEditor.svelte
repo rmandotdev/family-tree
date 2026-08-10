@@ -251,7 +251,7 @@ function remove() {
         class="flex items-center justify-between gap-2 border-t border-stone-200 pt-4"
       >
         <div>
-          {#if person}
+          {#if person && person.id !== family.sourceId}
             <button
               class="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
               type="button"

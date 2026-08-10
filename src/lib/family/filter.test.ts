@@ -20,6 +20,7 @@ function tree(people: Person[], families: Family[]): TreeData {
   return {
     people: Object.fromEntries(people.map((p) => [p.id, p])),
     families: Object.fromEntries(families.map((f) => [f.id, f])),
+    sourceId: null,
   };
 }
 

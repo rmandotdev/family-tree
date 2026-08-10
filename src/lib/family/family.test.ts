@@ -4,7 +4,12 @@ import { createFamily } from "./family";
 import type { PersonInput } from "./types";
 
 function makeState(): FamilyState {
-  return { people: {}, families: {}, selectedId: { value: null } };
+  return {
+    people: {},
+    families: {},
+    selectedId: { value: null },
+    sourceId: { value: null },
+  };
 }
 
 function input(firstName: string, gender: PersonInput["gender"]): PersonInput {
@@ -103,5 +108,40 @@ describe("createFamily", () => {
     expect(state.families[famId].husbandId).toBe(a.id);
     expect(state.families[famId].wifeId).toBe(c.id);
     expect(state.families[famId].childrenIds).toContain(kid.id);
+  });
+
+  it("makes the first added person the tree source when the tree is empty", () => {
+    const state = makeState();
+    const core = createFamily(state, () => {});
+    const adam = core.addPerson(input("Adam", "male"));
+    expect(core.sourceId).toBe(adam.id);
+
+    core.addPerson(input("Bob", "male"));
+    expect(core.sourceId).toBe(adam.id);
+  });
+
+  it("cannot delete the tree source person", () => {
+    const state = makeState();
+    const core = createFamily(state, () => {});
+    const adam = core.addPerson(input("Adam", "male"));
+    core.setSource(adam.id);
+
+    core.deletePerson(adam.id);
+
+    expect(state.people[adam.id]).toBeDefined();
+  });
+
+  it("can delete the tree source after switching the source", () => {
+    const state = makeState();
+    const core = createFamily(state, () => {});
+    const adam = core.addPerson(input("Adam", "male"));
+    const bob = core.addPerson(input("Bob", "male"));
+    core.setSource(adam.id);
+
+    core.setSource(bob.id);
+    core.deletePerson(adam.id);
+
+    expect(state.people[adam.id]).toBeUndefined();
+    expect(core.sourceId).toBe(bob.id);
   });
 });

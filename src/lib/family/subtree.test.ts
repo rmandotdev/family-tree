@@ -19,6 +19,7 @@ function tree(people: Person[], families: Family[]): TreeData {
   return {
     people: Object.fromEntries(people.map((p) => [p.id, p])),
     families: Object.fromEntries(families.map((f) => [f.id, f])),
+    sourceId: null,
   };
 }
 
@@ -29,7 +30,11 @@ function ids(subtree: TreeData): string[] {
 describe("computeSubtree", () => {
   it("returns an empty tree for an unknown focal person", () => {
     const t = tree([person("a")], []);
-    expect(computeSubtree(t, "nope")).toEqual({ people: {}, families: {} });
+    expect(computeSubtree(t, "nope")).toEqual({
+      people: {},
+      families: {},
+      sourceId: null,
+    });
   });
 
   it("returns just the focal person when they have no relatives", () => {
