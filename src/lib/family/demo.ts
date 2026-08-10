@@ -87,9 +87,40 @@ export function createDemoTree(): TreeData {
     birthDate: "2020-09-10",
   });
 
+  const mark = add({
+    firstName: "Mark",
+    lastName: "Jones",
+    gender: "male",
+    birthDate: "1960-01-15",
+  });
+
+  const eveLu = add({
+    firstName: "Eve",
+    lastName: "Lu",
+    gender: "female",
+    birthDate: "1996-06-21",
+  });
+
+  const fred = add({
+    firstName: "Fred",
+    lastName: "Smith",
+    gender: "male",
+    birthDate: "2024-03-02",
+  });
+
   addFamily(adam, eve, [john]);
   addFamily(john, mary, [bob, alice, charlie]);
   addFamily(david, alice, [zoe]);
+  addFamily(charlie, eveLu, [fred]);
+
+  const markFamily: Family = {
+    id: crypto.randomUUID(),
+    husbandId: mark.id,
+    childrenIds: [david.id],
+  };
+  families[markFamily.id] = markFamily;
+  mark.familyIds.push(markFamily.id);
+  david.parentFamilyId = markFamily.id;
 
   function addFamily(
     husband: Person,

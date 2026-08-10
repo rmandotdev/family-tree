@@ -7,7 +7,6 @@
   },
   "scripts": {
     "build": "vite build",
-    "check": "svelte-kit sync && tsc --noEmit",
     "deploy": "bun run --sequential build wrangler:deploy",
     "dev": "vite dev",
     "format": "biome check --write",
@@ -15,6 +14,8 @@
     "lint": "biome check",
     "prepare": "svelte-kit sync",
     "preview": "vite preview",
+    "test": "bun test --dots",
+    "test:watch": "bun test --watch",
     "wrangler:deploy": "wrangler deploy"
   },
   "overrides": {
@@ -29,7 +30,6 @@
     "@tailwindcss/vite": "4.3.3",
     "knip": "6.32.0",
     "svelte": "5.56.8",
-    "svelte-check": "4.7.5",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "8.2.1",

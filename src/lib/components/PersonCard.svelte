@@ -1,4 +1,5 @@
 <script lang="ts">
+import { formatLifespan } from "$lib/family/format";
 import { CARD_H, CARD_W } from "$lib/family/layout";
 import type { Person } from "$lib/family/types";
 import { canvas } from "./pan.svelte";
@@ -27,14 +28,7 @@ const cardClass = `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 te
   selected ? "ring-2 ring-sky-500" : "hover:shadow-lg"
 }`;
 
-function lifespan(): string {
-  const birth = person.birthDate ?? "";
-  const death = person.deathDate ?? "";
-  if (birth && death) return `${birth} – ${death}`;
-  if (birth) return `b. ${birth}`;
-  if (death) return `d. ${death}`;
-  return "";
-}
+const lifespan = $derived(formatLifespan(person));
 </script>
 
 <button
@@ -52,9 +46,7 @@ function lifespan(): string {
   <span class="block truncate font-semibold text-stone-800">
     {person.firstName} {person.lastName}
   </span>
-  {#if lifespan()}
-    <span class="mt-0.5 block truncate text-xs text-stone-500"
-      >{lifespan()}</span
-    >
+  {#if lifespan}
+    <span class="mt-0.5 block truncate text-xs text-stone-500">{lifespan}</span>
   {/if}
 </button>
