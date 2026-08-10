@@ -118,71 +118,88 @@ function remove() {
 </script>
 
 <Modal {title} {onClose}>
-    <form
-      class="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
-      onsubmit={(e) => {
-        e.preventDefault();
-        save();
-      }}
-    >
+  <form
+    class="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
+    onsubmit={(e) => {
+      e.preventDefault();
+      save();
+    }}
+  >
+    <div class="grid grid-cols-2 gap-3">
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">First name *</span>
+        <input
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          bind:value={firstName}
+          required
+        />
+      </label>
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">Last name</span>
+        <input
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          bind:value={lastName}
+        />
+      </label>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3">
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">Gender</span>
+        <select
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none disabled:bg-stone-100 disabled:text-stone-500"
+          bind:value={gender}
+          disabled={isAddingParent}
+        >
+          <option value="male">Male</option>
+          <option value="female">Female</option>
+          <option value="unknown">Unknown</option>
+        </select>
+      </label>
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">Birth</span>
+        <input
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          type="date"
+          bind:value={birthDate}
+        />
+      </label>
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">Death</span>
+        <input
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          type="date"
+          bind:value={deathDate}
+        />
+      </label>
+    </div>
+
+    {#if !isAddingParent}
+      <label class="block text-sm">
+        <span class="font-medium text-stone-700">Spouse</span>
+        <select
+          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+          bind:value={spouseId}
+        >
+          <option value="">—</option>
+          {#each spouseOptions as option (option.id)}
+            <option value={option.id}>
+              {option.firstName}
+              {option.lastName}
+            </option>
+          {/each}
+        </select>
+      </label>
+
       <div class="grid grid-cols-2 gap-3">
         <label class="block text-sm">
-          <span class="font-medium text-stone-700">First name *</span>
-          <input
-            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            bind:value={firstName}
-            required
-          />
-        </label>
-        <label class="block text-sm">
-          <span class="font-medium text-stone-700">Last name</span>
-          <input
-            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            bind:value={lastName}
-          />
-        </label>
-      </div>
-
-      <div class="grid grid-cols-3 gap-3">
-        <label class="block text-sm">
-          <span class="font-medium text-stone-700">Gender</span>
-          <select
-            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none disabled:bg-stone-100 disabled:text-stone-500"
-            bind:value={gender}
-            disabled={isAddingParent}
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="unknown">Unknown</option>
-          </select>
-        </label>
-        <label class="block text-sm">
-          <span class="font-medium text-stone-700">Birth</span>
-          <input
-            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            type="date"
-            bind:value={birthDate}
-          />
-        </label>
-        <label class="block text-sm">
-          <span class="font-medium text-stone-700">Death</span>
-          <input
-            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            type="date"
-            bind:value={deathDate}
-          />
-        </label>
-      </div>
-
-      {#if !isAddingParent}
-        <label class="block text-sm">
-          <span class="font-medium text-stone-700">Spouse</span>
+          <span class="font-medium text-stone-700">Mother</span>
           <select
             class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-            bind:value={spouseId}
+            bind:value={motherId}
           >
             <option value="">—</option>
-            {#each spouseOptions as option (option.id)}
+            {#each motherOptions as option (option.id)}
               <option value={option.id}>
                 {option.firstName}
                 {option.lastName}
@@ -190,74 +207,57 @@ function remove() {
             {/each}
           </select>
         </label>
-
-        <div class="grid grid-cols-2 gap-3">
-          <label class="block text-sm">
-            <span class="font-medium text-stone-700">Mother</span>
-            <select
-              class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-              bind:value={motherId}
-            >
-              <option value="">—</option>
-              {#each motherOptions as option (option.id)}
-                <option value={option.id}>
-                  {option.firstName}
-                  {option.lastName}
-                </option>
-              {/each}
-            </select>
-          </label>
-          <label class="block text-sm">
-            <span class="font-medium text-stone-700">Father</span>
-            <select
-              class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-              bind:value={fatherId}
-            >
-              <option value="">—</option>
-              {#each fatherOptions as option (option.id)}
-                <option value={option.id}>
-                  {option.firstName}
-                  {option.lastName}
-                </option>
-              {/each}
-            </select>
-          </label>
-        </div>
-      {/if}
-
-      {#if error}
-        <p class="text-sm text-red-600">{error}</p>
-      {/if}
-
-      <div
-        class="flex items-center justify-between gap-2 border-t border-stone-200 pt-4"
-      >
-        <div>
-          {#if person && person.id !== tree.sourceId}
-            <button
-              class="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-              type="button"
-              onclick={remove}
-            >
-              Delete
-            </button>
-          {/if}
-        </div>
-        <div class="flex gap-2">
-          <button
-            class="rounded-md border border-stone-300 px-4 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
-            type="button"
-            onclick={onClose}
+        <label class="block text-sm">
+          <span class="font-medium text-stone-700">Father</span>
+          <select
+            class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
+            bind:value={fatherId}
           >
-            Cancel
-          </button>
-          <button
-            class="rounded-md bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
-            type="submit"
-          >
-            Save
-          </button>
-        </div>
+            <option value="">—</option>
+            {#each fatherOptions as option (option.id)}
+              <option value={option.id}>
+                {option.firstName}
+                {option.lastName}
+              </option>
+            {/each}
+          </select>
+        </label>
       </div>
-    </form>
+    {/if}
+
+    {#if error}
+      <p class="text-sm text-red-600">{error}</p>
+    {/if}
+
+    <div
+      class="flex items-center justify-between gap-2 border-t border-stone-200 pt-4"
+    >
+      <div>
+        {#if person && person.id !== tree.sourceId}
+          <button
+            class="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            type="button"
+            onclick={remove}
+          >
+            Delete
+          </button>
+        {/if}
+      </div>
+      <div class="flex gap-2">
+        <button
+          class="rounded-md border border-stone-300 px-4 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+          type="button"
+          onclick={onClose}
+        >
+          Cancel
+        </button>
+        <button
+          class="rounded-md bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
+          type="submit"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </form>
 </Modal>
