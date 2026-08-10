@@ -1,8 +1,8 @@
 import { browser } from "$app/environment";
 import { createDemoTree } from "./demo";
-import type { FamilyState } from "./family";
-import { createFamily } from "./family";
 import { loadTree, saveTree } from "./persistence";
+import type { FamilyTreeState } from "./tree";
+import { createFamilyTree } from "./tree";
 import type { Family, Person, TreeDataWithSource } from "./types";
 
 const people = $state<Record<string, Person>>({});
@@ -10,9 +10,9 @@ const families = $state<Record<string, Family>>({});
 const selectedId = $state<{ value: string | null }>({ value: null });
 const sourceId = $state<{ value: string | null }>({ value: null });
 
-const state: FamilyState = { people, families, selectedId, sourceId };
+const state: FamilyTreeState = { people, families, selectedId, sourceId };
 
-export const family = createFamily(state, () => {
+export const tree = createFamilyTree(state, () => {
   if (browser)
     saveTree({
       people: state.people,
@@ -32,7 +32,7 @@ if (browser) {
     Object.assign(people, saved.people);
     Object.assign(families, saved.families);
     sourceId.value = resolveSourceId(saved);
-    family.sanitize();
+    tree.sanitize();
   } else {
     const demo = createDemoTree();
     Object.assign(people, demo.people);

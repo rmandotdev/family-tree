@@ -1,5 +1,5 @@
 <script lang="ts">
-import { family } from "$lib/family/family.svelte";
+import { tree } from "#lib/family/tree.svelte";
 import { branchActions, filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
 import type { DisplayMode } from "$lib/family/subtree";
@@ -24,7 +24,7 @@ const emptyPovCollapse: PovCollapseState = {
   expandedParents: new Set<string>(),
 };
 
-let pov = $state<{ focalId: string }>({ focalId: family.sourceId ?? "" });
+let pov = $state<{ focalId: string }>({ focalId: tree.sourceId ?? "" });
 let mode = $state<DisplayMode>("all");
 let collapseByPov = $state<Record<string, PovCollapseState>>({});
 let openMenuId = $state<string | null>(null);
@@ -38,7 +38,7 @@ let addRelativePreset = $state<{
   parentOf?: string;
 } | null>(null);
 
-const fullData = $derived({ people: family.people, families: family.families });
+const fullData = $derived({ people: tree.people, families: tree.families });
 const povCollapse = $derived(collapseByPov[pov.focalId] ?? emptyPovCollapse);
 const collapsedChildren = $derived(povCollapse.children);
 const collapsedParents = $derived(povCollapse.parents);
@@ -53,13 +53,13 @@ const viewData = $derived(
 const actions = $derived(branchActions(fullData, pov.focalId));
 const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
-const focal = $derived(family.people[pov.focalId] ?? null);
-const onSource = $derived(pov.focalId === family.sourceId);
-const selected = $derived(family.selected);
+const focal = $derived(tree.people[pov.focalId] ?? null);
+const onSource = $derived(pov.focalId === tree.sourceId);
+const selected = $derived(tree.selected);
 
 function toggleMenu(id: string) {
   if (canvas.isPanning) return;
-  family.select(id);
+  tree.select(id);
   openMenuId = openMenuId === id ? null : id;
 }
 
@@ -89,14 +89,14 @@ function openAddRelative(
   id: string,
   relation: "child" | "spouse" | "sibling" | "mother" | "father",
 ) {
-  const person = family.people[id];
+  const person = tree.people[id];
   if (!person) return;
   let preset: typeof addRelativePreset = null;
   if (relation === "spouse") {
     preset = { spouseId: id, gender: oppositeGender(person.gender) };
   } else if (relation === "child") {
-    const spouseId = family.spouseOf(id);
-    const spouse = spouseId ? family.people[spouseId] : undefined;
+    const spouseId = tree.spouseOf(id);
+    const spouse = spouseId ? tree.people[spouseId] : undefined;
     const motherId =
       person.gender === "female"
         ? id
@@ -112,7 +112,7 @@ function openAddRelative(
     preset = { motherId, fatherId };
   } else if (relation === "sibling") {
     const fam = person.parentFamilyId
-      ? family.families[person.parentFamilyId]
+      ? tree.families[person.parentFamilyId]
       : undefined;
     preset = { motherId: fam?.wifeId, fatherId: fam?.husbandId };
   } else {
@@ -139,7 +139,7 @@ function handleAction(personId: string, action: CardAction) {
       break;
     case "focus":
       pov = { focalId: personId };
-      family.select(personId);
+      tree.select(personId);
       recenterKey += 1;
       break;
     case "addChild":
@@ -169,8 +169,8 @@ function handleAction(personId: string, action: CardAction) {
       );
       break;
     case "makeSource":
-      family.setSource(personId);
-      family.select(personId);
+      tree.setSource(personId);
+      tree.select(personId);
       break;
   }
 }
@@ -191,8 +191,8 @@ function toggleCollapse(kind: keyof PovCollapseState, personId: string) {
 }
 
 function goBack() {
-  pov = { focalId: family.sourceId ?? "" };
-  family.select(family.sourceId);
+  pov = { focalId: tree.sourceId ?? "" };
+  tree.select(tree.sourceId);
   recenterKey += 1;
 }
 </script>
@@ -218,7 +218,7 @@ function goBack() {
       </svg>
 
       {#each visibleList as person (person.id)}
-        {@const fam = person.parentFamilyId ? family.families[person.parentFamilyId] : undefined}
+        {@const fam = person.parentFamilyId ? tree.families[person.parentFamilyId] : undefined}
         {@const pos = layout.positions.get(person.id)}
         {@const personActions = actions.get(person.id)}
         {@const parentsHidden = (personActions?.parentsHiddenByDefault ?? false) ? !expandedParents.has(person.id) : collapsedParents.has(person.id)}
@@ -227,7 +227,7 @@ function goBack() {
             {person}
             x={pos.x}
             y={pos.y}
-            selected={family.selectedId === person.id}
+            selected={tree.selectedId === person.id}
             menuOpen={openMenuId === person.id}
             childrenCollapsed={collapsedChildren.has(person.id)}
             parentsCollapsed={parentsHidden}
@@ -265,13 +265,13 @@ function goBack() {
       >
         Edit
       </button>
-      {#if selected.id !== family.sourceId}
+      {#if selected.id !== tree.sourceId}
         <button
           class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
           type="button"
           onclick={() => {
             if (window.confirm(`Delete ${selected.firstName} ${selected.lastName}?`)) {
-              family.deletePerson(selected.id);
+              tree.deletePerson(selected.id);
             }
           }}
         >
@@ -324,7 +324,7 @@ function goBack() {
   {/if}
 
   {#if editing}
-    {@const person = editing.id ? (family.people[editing.id] ?? null) : null}
+    {@const person = editing.id ? (tree.people[editing.id] ?? null) : null}
     <PersonEditor
       {person}
       preset={addRelativePreset}

@@ -1,5 +1,5 @@
 <script lang="ts">
-import { family } from "$lib/family/family.svelte";
+import { tree } from "#lib/family/tree.svelte";
 import type { Gender, Person, PersonInput } from "$lib/family/types";
 
 let {
@@ -39,38 +39,37 @@ let birthDate = $state(person?.birthDate ?? "");
 let deathDate = $state(person?.deathDate ?? "");
 let motherId = $state(
   person?.parentFamilyId
-    ? (family.families[person.parentFamilyId]?.wifeId ?? "")
+    ? (tree.families[person.parentFamilyId]?.wifeId ?? "")
     : (preset?.motherId ?? ""),
 );
 let fatherId = $state(
   person?.parentFamilyId
-    ? (family.families[person.parentFamilyId]?.husbandId ?? "")
+    ? (tree.families[person.parentFamilyId]?.husbandId ?? "")
     : (preset?.fatherId ?? ""),
 );
 let spouseId = $state(
-  person ? (family.spouseOf(person.id) ?? "") : (preset?.spouseId ?? ""),
+  person ? (tree.spouseOf(person.id) ?? "") : (preset?.spouseId ?? ""),
 );
 let error = $state("");
 
 const motherOptions = $derived(
-  family.list.filter(
-    (p) =>
-      p.gender === "female" && family.canBeParent(person?.id ?? null, p.id),
+  tree.list.filter(
+    (p) => p.gender === "female" && tree.canBeParent(person?.id ?? null, p.id),
   ),
 );
 
 const fatherOptions = $derived(
-  family.list.filter(
-    (p) => p.gender === "male" && family.canBeParent(person?.id ?? null, p.id),
+  tree.list.filter(
+    (p) => p.gender === "male" && tree.canBeParent(person?.id ?? null, p.id),
   ),
 );
 
 const spouseOptions = $derived(
-  family.list.filter(
+  tree.list.filter(
     (p) =>
       p.id !== person?.id &&
-      family.canBeSpouse(person?.id ?? null, p.id) &&
-      (family.spouseOf(p.id) === null || family.spouseOf(p.id) === person?.id),
+      tree.canBeSpouse(person?.id ?? null, p.id) &&
+      (tree.spouseOf(p.id) === null || tree.spouseOf(p.id) === person?.id),
   ),
 );
 
@@ -88,30 +87,30 @@ function save() {
     deathDate: deathDate || undefined,
   };
   if (preset?.parentOf) {
-    const target = family.addPerson(input);
-    const child = family.people[preset.parentOf];
+    const target = tree.addPerson(input);
+    const child = tree.people[preset.parentOf];
     const existing = child?.parentFamilyId
-      ? family.families[child.parentFamilyId]
+      ? tree.families[child.parentFamilyId]
       : undefined;
     if (preset.gender === "male") {
-      family.setParents(preset.parentOf, existing?.wifeId, target.id);
+      tree.setParents(preset.parentOf, existing?.wifeId, target.id);
     } else {
-      family.setParents(preset.parentOf, target.id, existing?.husbandId);
+      tree.setParents(preset.parentOf, target.id, existing?.husbandId);
     }
     onClose();
     return;
   }
-  const target = person ?? family.addPerson(input);
-  if (person) family.updatePerson(target.id, input);
-  family.setParents(target.id, motherId || undefined, fatherId || undefined);
-  family.setSpouse(target.id, spouseId || null);
+  const target = person ?? tree.addPerson(input);
+  if (person) tree.updatePerson(target.id, input);
+  tree.setParents(target.id, motherId || undefined, fatherId || undefined);
+  tree.setSpouse(target.id, spouseId || null);
   onClose();
 }
 
 function remove() {
   if (!person) return;
   if (window.confirm(`Delete ${person.firstName} ${person.lastName}?`)) {
-    family.deletePerson(person.id);
+    tree.deletePerson(person.id);
     onClose();
   }
 }
@@ -251,7 +250,7 @@ function remove() {
         class="flex items-center justify-between gap-2 border-t border-stone-200 pt-4"
       >
         <div>
-          {#if person && person.id !== family.sourceId}
+          {#if person && person.id !== tree.sourceId}
             <button
               class="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
               type="button"

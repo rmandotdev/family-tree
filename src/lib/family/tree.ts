@@ -1,13 +1,13 @@
 import type { Family, Person, PersonInput } from "./types";
 
-export interface FamilyState {
+export interface FamilyTreeState {
   people: Record<string, Person>;
   families: Record<string, Family>;
   selectedId: { value: string | null };
   sourceId: { value: string | null };
 }
 
-export function createFamily(state: FamilyState, persist: () => void) {
+export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
   const { people, families } = state;
 
   function addPerson(input: PersonInput): Person {
