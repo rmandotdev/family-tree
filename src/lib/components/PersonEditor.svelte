@@ -2,8 +2,19 @@
 import { family } from "$lib/family/family.svelte";
 import type { Gender, Person, PersonInput } from "$lib/family/types";
 
-let { person, onClose }: { person: Person | null; onClose: () => void } =
-  $props();
+let {
+  person,
+  onClose,
+  preset = null,
+}: {
+  person: Person | null;
+  onClose: () => void;
+  preset?: { spouseId?: string; motherId?: string; fatherId?: string } | null;
+} = $props();
+
+const title = $derived(
+  person ? "Edit person" : preset ? "Add a relative" : "Add person",
+);
 
 let firstName = $state(person?.firstName ?? "");
 let lastName = $state(person?.lastName ?? "");
@@ -13,14 +24,16 @@ let deathDate = $state(person?.deathDate ?? "");
 let motherId = $state(
   person?.parentFamilyId
     ? (family.families[person.parentFamilyId]?.wifeId ?? "")
-    : "",
+    : (preset?.motherId ?? ""),
 );
 let fatherId = $state(
   person?.parentFamilyId
     ? (family.families[person.parentFamilyId]?.husbandId ?? "")
-    : "",
+    : (preset?.fatherId ?? ""),
 );
-let spouseId = $state(person ? (family.spouseOf(person.id) ?? "") : "");
+let spouseId = $state(
+  person ? (family.spouseOf(person.id) ?? "") : (preset?.spouseId ?? ""),
+);
 let error = $state("");
 
 const motherOptions = $derived(
@@ -93,7 +106,7 @@ function remove() {
     }}
   >
     <h2 class="text-lg font-semibold text-stone-900">
-      {person ? "Edit person" : "Add person"}
+      {title}
     </h2>
 
     <form

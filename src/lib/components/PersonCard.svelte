@@ -2,20 +2,36 @@
 import { formatLifespan } from "$lib/family/format";
 import { CARD_H, CARD_W } from "$lib/family/layout";
 import type { Person } from "$lib/family/types";
-import { canvas } from "./pan.svelte";
+
+export type CardAction =
+  | "edit"
+  | "focus"
+  | "addChild"
+  | "addSpouse"
+  | "addSibling"
+  | "toggleChildren"
+  | "toggleParents";
 
 let {
   person,
   x,
   y,
   selected,
-  onOpen,
+  menuOpen,
+  childrenCollapsed,
+  parentsCollapsed,
+  onToggleMenu,
+  onAction,
 }: {
   person: Person;
   x: number;
   y: number;
   selected: boolean;
-  onOpen: (id: string) => void;
+  menuOpen: boolean;
+  childrenCollapsed: boolean;
+  parentsCollapsed: boolean;
+  onToggleMenu: () => void;
+  onAction: (action: CardAction) => void;
 } = $props();
 
 const accent = $derived(
@@ -35,22 +51,82 @@ const cardClass = $derived(
 const lifespan = $derived(formatLifespan(person));
 </script>
 
-<button
-  class={cardClass}
-  style:left="{x}px"
-  style:top="{y}px"
-  style:width="{CARD_W}px"
-  style:height="{CARD_H}px"
-  type="button"
-  onclick={() => {
-    if (canvas.isPanning) return;
-    onOpen(person.id);
-  }}
->
-  <span class="block truncate font-semibold text-stone-800">
-    {person.firstName} {person.lastName}
-  </span>
-  {#if lifespan}
-    <span class="mt-0.5 block truncate text-xs text-stone-500">{lifespan}</span>
+<div class="absolute" style:left="{x}px" style:top="{y}px" data-card>
+  <button
+    class={cardClass}
+    style:width="{CARD_W}px"
+    style:height="{CARD_H}px"
+    type="button"
+    onclick={onToggleMenu}
+  >
+    <span class="block truncate font-semibold text-stone-800">
+      {person.firstName} {person.lastName}
+    </span>
+    {#if lifespan}
+      <span class="mt-0.5 block truncate text-xs text-stone-500"
+        >{lifespan}</span
+      >
+    {/if}
+  </button>
+
+  {#if menuOpen}
+    <div
+      class="absolute z-50 w-52 overflow-hidden rounded-lg border border-stone-200 bg-white py-1 shadow-lg"
+      style:top={`${CARD_H + 4}px`}
+    >
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("edit")}
+      >
+        Edit person
+      </button>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("focus")}
+      >
+        Go to the person's tree
+      </button>
+      <div class="my-1 border-t border-stone-100"></div>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("addChild")}
+      >
+        Add a child
+      </button>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("addSpouse")}
+      >
+        Add a spouse
+      </button>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("addSibling")}
+      >
+        Add a sibling
+      </button>
+      <div class="my-1 border-t border-stone-100"></div>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("toggleChildren")}
+      >
+        {childrenCollapsed ? "Expand" : "Collapse"}
+        children branch
+      </button>
+      <button
+        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        type="button"
+        onclick={() => onAction("toggleParents")}
+      >
+        {parentsCollapsed ? "Expand" : "Collapse"}
+        parents branch
+      </button>
+    </div>
   {/if}
-</button>
+</div>

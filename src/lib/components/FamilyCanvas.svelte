@@ -5,10 +5,12 @@ import { canvas } from "./pan.svelte";
 let {
   contentWidth,
   contentHeight,
+  recenterKey,
   children,
 }: {
   contentWidth: number;
   contentHeight: number;
+  recenterKey?: number;
   children: Snippet;
 } = $props();
 
@@ -94,6 +96,19 @@ function resetView() {
 $effect(() => {
   const el = viewport;
   if (interacted || !el) return;
+  const w = el.clientWidth;
+  const h = el.clientHeight;
+  if (w === 0 || h === 0) return;
+  pan.x = (w - contentWidth * zoom) / 2;
+  pan.y = (h - contentHeight * zoom) / 2;
+});
+
+let recenteredKey: number | undefined;
+$effect(() => {
+  const el = viewport;
+  const key = recenterKey;
+  if (!el || key === undefined || key === recenteredKey) return;
+  recenteredKey = key;
   const w = el.clientWidth;
   const h = el.clientHeight;
   if (w === 0 || h === 0) return;
