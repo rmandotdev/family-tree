@@ -9,6 +9,8 @@ export type CardAction =
   | "addChild"
   | "addSpouse"
   | "addSibling"
+  | "addMother"
+  | "addFather"
   | "toggleChildren"
   | "toggleParents";
 
@@ -20,6 +22,8 @@ let {
   menuOpen,
   childrenCollapsed,
   parentsCollapsed,
+  motherMissing,
+  fatherMissing,
   onToggleMenu,
   onAction,
 }: {
@@ -30,6 +34,8 @@ let {
   menuOpen: boolean;
   childrenCollapsed: boolean;
   parentsCollapsed: boolean;
+  motherMissing: boolean;
+  fatherMissing: boolean;
   onToggleMenu: () => void;
   onAction: (action: CardAction) => void;
 } = $props();
@@ -110,6 +116,24 @@ const lifespan = $derived(formatLifespan(person));
       >
         Add a sibling
       </button>
+      {#if motherMissing}
+        <button
+          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          type="button"
+          onclick={() => onAction("addMother")}
+        >
+          Add a mother
+        </button>
+      {/if}
+      {#if fatherMissing}
+        <button
+          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          type="button"
+          onclick={() => onAction("addFather")}
+        >
+          Add a father
+        </button>
+      {/if}
       <div class="my-1 border-t border-stone-100"></div>
       <button
         class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"

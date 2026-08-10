@@ -10,7 +10,7 @@
     "deploy": "bun run --sequential build wrangler:deploy",
     "dev": "vite dev",
     "format": "biome check --write",
-    "knip": "knip && knip --production",
+    "knip": "knip",
     "lint": "biome check",
     "prepare": "svelte-kit sync",
     "preview": "vite preview",

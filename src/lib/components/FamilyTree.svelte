@@ -3,6 +3,7 @@ import { family } from "$lib/family/family.svelte";
 import { filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
 import { computeSubtree } from "$lib/family/subtree";
+import type { Gender } from "$lib/family/types";
 import ConnectionLines from "./ConnectionLines.svelte";
 import FamilyCanvas from "./FamilyCanvas.svelte";
 import type { CardAction } from "./PersonCard.svelte";
@@ -20,6 +21,8 @@ let addRelativePreset = $state<{
   spouseId?: string;
   motherId?: string;
   fatherId?: string;
+  gender?: Gender;
+  parentOf?: string;
 } | null>(null);
 
 const fullData = $derived({ people: family.people, families: family.families });
@@ -62,12 +65,15 @@ function openEditor(id: string | null) {
   editing = { id };
 }
 
-function openAddRelative(id: string, relation: "child" | "spouse" | "sibling") {
+function openAddRelative(
+  id: string,
+  relation: "child" | "spouse" | "sibling" | "mother" | "father",
+) {
   const person = family.people[id];
   if (!person) return;
   let preset: typeof addRelativePreset = null;
   if (relation === "spouse") {
-    preset = { spouseId: id };
+    preset = { spouseId: id, gender: oppositeGender(person.gender) };
   } else if (relation === "child") {
     const spouseId = family.spouseOf(id);
     const spouse = spouseId ? family.people[spouseId] : undefined;
@@ -84,14 +90,25 @@ function openAddRelative(id: string, relation: "child" | "spouse" | "sibling") {
           ? spouse.id
           : undefined;
     preset = { motherId, fatherId };
-  } else {
+  } else if (relation === "sibling") {
     const fam = person.parentFamilyId
       ? family.families[person.parentFamilyId]
       : undefined;
     preset = { motherId: fam?.wifeId, fatherId: fam?.husbandId };
+  } else {
+    preset = {
+      parentOf: id,
+      gender: relation === "mother" ? "female" : "male",
+    };
   }
   addRelativePreset = preset;
   editing = { id: null };
+}
+
+function oppositeGender(gender: Gender): Gender | undefined {
+  if (gender === "male") return "female";
+  if (gender === "female") return "male";
+  return undefined;
 }
 
 function handleAction(personId: string, action: CardAction) {
@@ -113,6 +130,12 @@ function handleAction(personId: string, action: CardAction) {
       break;
     case "addSibling":
       openAddRelative(personId, "sibling");
+      break;
+    case "addMother":
+      openAddRelative(personId, "mother");
+      break;
+    case "addFather":
+      openAddRelative(personId, "father");
       break;
     case "toggleChildren":
       collapsedChildren = toggleSet(collapsedChildren, personId);
@@ -157,6 +180,7 @@ function exitPov() {
       </svg>
 
       {#each visibleList as person (person.id)}
+        {@const fam = person.parentFamilyId ? family.families[person.parentFamilyId] : undefined}
         {@const pos = layout.positions.get(person.id)}
         {#if pos}
           <PersonCard
@@ -167,6 +191,8 @@ function exitPov() {
             menuOpen={openMenuId === person.id}
             childrenCollapsed={collapsedChildren.has(person.id)}
             parentsCollapsed={collapsedParents.has(person.id)}
+            motherMissing={fam?.wifeId === undefined}
+            fatherMissing={fam?.husbandId === undefined}
             onToggleMenu={() => toggleMenu(person.id)}
             onAction={(action) => handleAction(person.id, action)}
           />
