@@ -132,30 +132,22 @@ export function createDemoTree(): TreeDataWithSource {
   addFamily(david, alice, [zoe]);
   addFamily(charlie, eveLu, [fred]);
   addFamily(min, wei, [eveLu, ken]);
-
-  const markFamily: Family = {
-    id: crypto.randomUUID(),
-    husbandId: mark.id,
-    childrenIds: [david.id],
-  };
-  families[markFamily.id] = markFamily;
-  mark.familyIds.push(markFamily.id);
-  david.parentFamilyId = markFamily.id;
+  addFamily(mark, null, [david]);
 
   function addFamily(
-    husband: Person,
-    wife: Person,
+    husband: Person | null,
+    wife: Person | null,
     children: Person[],
   ): Family {
     const family: Family = {
       id: crypto.randomUUID(),
-      husbandId: husband.id,
-      wifeId: wife.id,
+      husbandId: husband?.id,
+      wifeId: wife?.id,
       childrenIds: children.map((c) => c.id),
     };
     families[family.id] = family;
-    husband.familyIds.push(family.id);
-    wife.familyIds.push(family.id);
+    husband?.familyIds.push(family.id);
+    wife?.familyIds.push(family.id);
     for (const child of children) child.parentFamilyId = family.id;
     return family;
   }
