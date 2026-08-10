@@ -2,14 +2,13 @@ import type { TreeData } from "./types";
 
 export const CARD_W = 160;
 export const CARD_H = 90;
-export const SPOUSE_GAP = 20;
-export const SIBLING_GAP = SPOUSE_GAP;
+export const CARD_GAP = 20;
 export const ROW_H = 200;
 export const BUS_OFFSET = 40;
 export const BUS_STEP = 8;
 export const MARGIN = 24;
 
-export const COL_W = CARD_W + SIBLING_GAP;
+export const COL_W = CARD_W + CARD_GAP;
 
 export interface Point {
   x: number;
@@ -199,8 +198,8 @@ export function computeLayout(data: TreeData): LayoutResult {
     } else {
       const [a, b] = couple.parents;
       positions.set(a, { x, y });
-      positions.set(b, { x: x + CARD_W + SPOUSE_GAP, y });
-      maxRight = Math.max(maxRight, x + CARD_W * 2 + SPOUSE_GAP);
+      positions.set(b, { x: x + COL_W, y });
+      maxRight = Math.max(maxRight, x + CARD_W * 2 + CARD_GAP);
     }
   }
 

@@ -1,14 +1,13 @@
 import { describe, expect, it } from "bun:test";
 import type { Point } from "./layout";
 import {
+  CARD_GAP,
   CARD_H,
   CARD_W,
   COL_W,
   computeLayout,
   MARGIN,
   ROW_H,
-  SIBLING_GAP,
-  SPOUSE_GAP,
 } from "./layout";
 import type { Family, Gender, Person, TreeData } from "./types";
 
@@ -60,11 +59,11 @@ describe("computeLayout", () => {
 
     expect(pos(layout, a.id)).toEqual({ x: MARGIN, y: MARGIN });
     expect(pos(layout, b.id)).toEqual({
-      x: MARGIN + CARD_W + SPOUSE_GAP,
+      x: MARGIN + COL_W,
       y: MARGIN,
     });
     expect(layout.couples[0].parents).toEqual([a.id, b.id]);
-    expect(layout.width).toBe(CARD_W * 2 + SPOUSE_GAP + MARGIN * 2);
+    expect(layout.width).toBe(CARD_W * 2 + CARD_GAP + MARGIN * 2);
     expect(layout.height).toBe(CARD_H + MARGIN * 2);
   });
 
@@ -161,7 +160,7 @@ describe("computeLayout", () => {
       ),
     );
 
-    const c1Right = pos(layout, c1.id).x + CARD_W + SPOUSE_GAP + CARD_W;
+    const c1Right = pos(layout, c1.id).x + COL_W + CARD_W;
     expect(c1Right).toBeLessThanOrEqual(pos(layout, c2.id).x);
     const k1Right = pos(layout, k1.id).x + CARD_W;
     expect(k1Right).toBeLessThanOrEqual(pos(layout, k2.id).x);
@@ -195,7 +194,7 @@ describe("computeLayout", () => {
     const pa = pos(layout, a.id);
     const pb = pos(layout, b.id);
     expect(pb.y).toBe(pa.y);
-    expect(pb.x - pa.x).toBe(CARD_W + SIBLING_GAP);
+    expect(pb.x - pa.x).toBe(COL_W);
   });
 
   it("places a single parent on the row above its child's couple", () => {
@@ -242,7 +241,7 @@ describe("computeLayout", () => {
       ),
     );
 
-    expect(layout.width).toBe(CARD_W * 2 + SPOUSE_GAP + MARGIN * 2);
+    expect(layout.width).toBe(CARD_W * 2 + CARD_GAP + MARGIN * 2);
     expect(layout.height).toBe(ROW_H * 2 + CARD_H + MARGIN * 2);
   });
 });
