@@ -6,7 +6,7 @@ export interface FamilyState {
   selectedId: { value: string | null };
 }
 
-export function createFamilyCore(state: FamilyState, persist: () => void) {
+export function createFamily(state: FamilyState, persist: () => void) {
   const { people, families } = state;
 
   function addPerson(input: PersonInput): Person {

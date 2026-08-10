@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { FamilyState } from "./family";
-import { createFamilyCore } from "./family";
+import { createFamily } from "./family";
 import type { PersonInput } from "./types";
 
 function makeState(): FamilyState {
@@ -16,10 +16,10 @@ function expectId(value: string | undefined): string {
   return value;
 }
 
-describe("createFamilyCore", () => {
+describe("createFamily", () => {
   it("connects a newly added person to their spouse in a shared family", () => {
     const state = makeState();
-    const core = createFamilyCore(state, () => {});
+    const core = createFamily(state, () => {});
     const bob = core.addPerson(input("Bob", "male"));
     const jane = core.addPerson(input("Jane", "female"));
 
@@ -37,7 +37,7 @@ describe("createFamilyCore", () => {
 
   it("reconnects a deleted spouse to the existing family and its children", () => {
     const state = makeState();
-    const core = createFamilyCore(state, () => {});
+    const core = createFamily(state, () => {});
     const charlie = core.addPerson(input("Charlie", "male"));
     const eve = core.addPerson(input("Eve Lu", "female"));
     const fred = core.addPerson(input("Fred", "male"));
@@ -68,7 +68,7 @@ describe("createFamilyCore", () => {
 
   it("replaces a spouse without leaving a stray family behind", () => {
     const state = makeState();
-    const core = createFamilyCore(state, () => {});
+    const core = createFamily(state, () => {});
     const a = core.addPerson(input("A", "male"));
     const b = core.addPerson(input("B", "female"));
     const c = core.addPerson(input("C", "female"));
@@ -87,7 +87,7 @@ describe("createFamilyCore", () => {
 
   it("keeps children attached to the couple after a spouse change", () => {
     const state = makeState();
-    const core = createFamilyCore(state, () => {});
+    const core = createFamily(state, () => {});
     const a = core.addPerson(input("A", "male"));
     const b = core.addPerson(input("B", "female"));
     const c = core.addPerson(input("C", "female"));
