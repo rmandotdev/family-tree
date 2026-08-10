@@ -232,8 +232,8 @@ function goBack() {
         style:width="{layout.width}px"
         style:height="{layout.height}px"
         style:pointer-events="none"
+        aria-hidden="true"
       >
-        <title>Family tree relationships</title>
         <ConnectionLines
           positions={layout.positions}
           couples={layout.couples}
