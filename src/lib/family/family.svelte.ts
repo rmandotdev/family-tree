@@ -3,7 +3,7 @@ import { createDemoTree } from "./demo";
 import type { FamilyState } from "./family";
 import { createFamily } from "./family";
 import { loadTree, saveTree } from "./persistence";
-import type { Family, Person, TreeData } from "./types";
+import type { Family, Person, TreeDataWithSource } from "./types";
 
 const people = $state<Record<string, Person>>({});
 const families = $state<Record<string, Family>>({});
@@ -21,7 +21,7 @@ export const family = createFamily(state, () => {
     });
 });
 
-function resolveSourceId(data: TreeData): string | null {
+function resolveSourceId(data: TreeDataWithSource): string | null {
   if (data.sourceId && data.people[data.sourceId]) return data.sourceId;
   return Object.keys(data.people)[0] ?? null;
 }

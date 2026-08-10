@@ -20,7 +20,6 @@ function tree(people: Person[], families: Family[]): TreeData {
   return {
     people: Object.fromEntries(people.map((p) => [p.id, p])),
     families: Object.fromEntries(families.map((f) => [f.id, f])),
-    sourceId: null,
   };
 }
 
@@ -56,13 +55,13 @@ function demoTree(): TreeData {
 describe("filterCollapsed", () => {
   it("returns the data unchanged when nothing is collapsed", () => {
     const t = demoTree();
-    const out = filterCollapsed(t, new Set(), new Set());
+    const out = filterCollapsed(t, t, new Set(), new Set());
     expect(out).toBe(t);
   });
 
   it("prunes descendants when a children branch is collapsed", () => {
     const t = demoTree();
-    const out = filterCollapsed(t, new Set(["john"]), new Set());
+    const out = filterCollapsed(t, t, new Set(["john"]), new Set());
 
     expect(ids(out)).toEqual(
       ["adam", "david", "eve", "john", "mark", "mary"].sort(),
@@ -76,7 +75,7 @@ describe("filterCollapsed", () => {
 
   it("keeps the collapsed person's own couple but not its children", () => {
     const t = demoTree();
-    const out = filterCollapsed(t, new Set(["alice"]), new Set());
+    const out = filterCollapsed(t, t, new Set(["alice"]), new Set());
 
     expect(out.people).toHaveProperty("alice");
     expect(out.people).toHaveProperty("david");
@@ -86,7 +85,7 @@ describe("filterCollapsed", () => {
 
   it("prunes ancestors when a parents branch is collapsed", () => {
     const t = demoTree();
-    const out = filterCollapsed(t, new Set(), new Set(["bob"]));
+    const out = filterCollapsed(t, t, new Set(), new Set(["bob"]));
 
     expect(ids(out)).toEqual(["bob", "david", "mark"]);
     expect(out.families).not.toHaveProperty("f1");
@@ -98,7 +97,7 @@ describe("filterCollapsed", () => {
 
   it("leaves the data unchanged when collapsing a leaf person", () => {
     const t = demoTree();
-    const out = filterCollapsed(t, new Set(["bob"]), new Set(["mark"]));
+    const out = filterCollapsed(t, t, new Set(["bob"]), new Set(["mark"]));
     expect(out).toBe(t);
   });
 
@@ -108,7 +107,7 @@ describe("filterCollapsed", () => {
     const subtree = computeSubtree(t, mark.id);
     expect(ids(subtree)).toEqual(["alice", "david", "mark", "zoe"]);
 
-    const out = filterCollapsed(subtree, new Set(["mark"]), new Set());
+    const out = filterCollapsed(subtree, t, new Set(["mark"]), new Set());
 
     expect(ids(out)).toEqual(["mark"]);
     expect(out.people).not.toHaveProperty("alice");
@@ -121,7 +120,7 @@ describe("filterCollapsed", () => {
     const mark = t.people.mark;
     const subtree = computeSubtree(t, mark.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["david"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["david"]), {
       focalId: mark.id,
     });
 
@@ -135,7 +134,7 @@ describe("filterCollapsed", () => {
     const mark = t.people.mark;
     const subtree = computeSubtree(t, mark.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["zoe"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["zoe"]), {
       focalId: mark.id,
     });
 
@@ -149,7 +148,7 @@ describe("filterCollapsed", () => {
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["john"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["john"]), {
       focalId: zoe.id,
     });
 
@@ -171,7 +170,7 @@ describe("filterCollapsed", () => {
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
 
-    const out = filterCollapsed(subtree, new Set(["alice"]), new Set(), {
+    const out = filterCollapsed(subtree, t, new Set(["alice"]), new Set(), {
       focalId: zoe.id,
     });
 
@@ -186,7 +185,7 @@ describe("filterCollapsed", () => {
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["zoe"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["zoe"]), {
       focalId: zoe.id,
     });
 
@@ -199,7 +198,7 @@ describe("filterCollapsed", () => {
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["alice"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["alice"]), {
       focalId: zoe.id,
     });
 
@@ -218,7 +217,7 @@ describe("filterCollapsed", () => {
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
 
-    const out = filterCollapsed(subtree, new Set(), new Set(["bob"]), {
+    const out = filterCollapsed(subtree, t, new Set(), new Set(["bob"]), {
       focalId: zoe.id,
     });
 
@@ -234,8 +233,7 @@ describe("filterCollapsed", () => {
   it("does not offer parents-collapse to people connected only by the child branch", () => {
     const t = demoTree();
     const mark = t.people.mark;
-    const subtree = computeSubtree(t, mark.id);
-    const actions = branchActions(subtree, mark.id);
+    const actions = branchActions(t, mark.id);
 
     expect(actions.get("mark")?.canCollapseParents).toBe(false);
     expect(actions.get("david")?.canCollapseParents).toBe(false);
@@ -246,24 +244,63 @@ describe("filterCollapsed", () => {
   it("offers parents-collapse to people connected via the parent branch", () => {
     const t = demoTree();
     const zoe = t.people.zoe;
-    const subtree = computeSubtree(t, zoe.id);
-    const actions = branchActions(subtree, zoe.id);
+    const actions = branchActions(t, zoe.id);
 
     expect(actions.get("zoe")?.canCollapseParents).toBe(true);
     expect(actions.get("david")?.canCollapseParents).toBe(true);
     expect(actions.get("alice")?.canCollapseParents).toBe(true);
     expect(actions.get("john")?.canCollapseParents).toBe(true);
-    expect(actions.get("bob")?.canCollapseParents).toBe(true);
     expect(actions.get("mark")?.canCollapseParents).toBe(false);
     expect(actions.get("adam")?.canCollapseParents).toBe(false);
     expect(actions.get("eve")?.canCollapseParents).toBe(false);
   });
 
+  it("does not offer parents-collapse to collateral relatives of the POV", () => {
+    const t = demoTree();
+    const zoe = t.people.zoe;
+    const actions = branchActions(t, zoe.id);
+
+    expect(actions.get("bob")?.canCollapseParents).toBe(false);
+    expect(actions.get("charlie")?.canCollapseParents).toBe(false);
+    expect(actions.get("fred")?.canCollapseParents).toBe(false);
+    expect(actions.get("evelu")?.canCollapseParents).toBe(false);
+  });
+
+  it("offers parents-collapse to the POV's partner but hides it by default", () => {
+    const t = demoTree();
+    const alice = t.people.alice;
+    const actions = branchActions(t, alice.id);
+
+    expect(actions.get("david")?.canCollapseParents).toBe(true);
+    expect(actions.get("david")?.parentsHiddenByDefault).toBe(true);
+    expect(actions.get("mark")?.canCollapseParents).toBe(false);
+
+    const fred = t.people.fred;
+    const fredActions = branchActions(t, fred.id);
+    expect(fredActions.get("david")?.canCollapseParents).toBe(false);
+  });
+
+  it("expands the POV's partner parents branch on demand", () => {
+    const t = demoTree();
+    const alice = t.people.alice;
+    const subtree = computeSubtree(t, alice.id);
+    expect(ids(subtree)).not.toContain("mark");
+
+    const out = filterCollapsed(subtree, t, new Set(), new Set(), {
+      focalId: alice.id,
+      expandedParents: new Set(["david"]),
+    });
+
+    expect(ids(out)).toContain("mark");
+    expect(out.people).toHaveProperty("alice");
+    expect(out.people).toHaveProperty("david");
+    expect(out.families).toHaveProperty("f5");
+  });
+
   it("offers children-collapse only to people with children who are not POV ancestors", () => {
     const t = demoTree();
     const zoe = t.people.zoe;
-    const subtree = computeSubtree(t, zoe.id);
-    const actions = branchActions(subtree, zoe.id);
+    const actions = branchActions(t, zoe.id);
 
     expect(actions.get("zoe")?.canCollapseChildren).toBe(false);
     expect(actions.get("mark")?.canCollapseChildren).toBe(false);
@@ -276,8 +313,7 @@ describe("filterCollapsed", () => {
   it("does not offer children-collapse to people connected only by the parent branch", () => {
     const t = demoTree();
     const david = t.people.david;
-    const subtree = computeSubtree(t, david.id);
-    const actions = branchActions(subtree, david.id);
+    const actions = branchActions(t, david.id);
 
     expect(actions.get("mark")?.canCollapseChildren).toBe(false);
     expect(actions.get("zoe")?.canCollapseParents).toBe(false);
@@ -290,7 +326,7 @@ describe("filterCollapsed", () => {
     const david = t.people.david;
     const subtree = computeSubtree(t, david.id);
 
-    const out = filterCollapsed(subtree, new Set(["mark"]), new Set(), {
+    const out = filterCollapsed(subtree, t, new Set(["mark"]), new Set(), {
       focalId: david.id,
     });
 
@@ -304,7 +340,7 @@ describe("filterCollapsed", () => {
     const david = t.people.david;
     const subtree = computeSubtree(t, david.id);
 
-    const out = filterCollapsed(subtree, new Set(["david"]), new Set(), {
+    const out = filterCollapsed(subtree, t, new Set(["david"]), new Set(), {
       focalId: david.id,
     });
 

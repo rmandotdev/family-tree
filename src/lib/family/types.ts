@@ -18,11 +18,13 @@ export interface Family {
   childrenIds: string[];
 }
 
-export interface TreeData {
+export interface TreeDataWithSource {
   people: Record<string, Person>;
   families: Record<string, Family>;
   sourceId: string | null;
 }
+
+export type TreeData = Omit<TreeDataWithSource, "sourceId">;
 
 export type PersonInput = Pick<
   Person,

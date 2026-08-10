@@ -1,4 +1,4 @@
-import type { Family, Person, TreeData } from "./types";
+import type { Family, Person, TreeDataWithSource } from "./types";
 
 interface DemoArgs {
   firstName: string;
@@ -10,7 +10,7 @@ interface DemoArgs {
   familyIds?: string[];
 }
 
-export function createDemoTree(): TreeData {
+export function createDemoTree(): TreeDataWithSource {
   const people: Record<string, Person> = {};
   const families: Record<string, Family> = {};
 

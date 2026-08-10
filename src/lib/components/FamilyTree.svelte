@@ -2,6 +2,7 @@
 import { family } from "$lib/family/family.svelte";
 import { branchActions, filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
+import type { DisplayMode } from "$lib/family/subtree";
 import { computeSubtree } from "$lib/family/subtree";
 import type { Gender } from "$lib/family/types";
 import ConnectionLines from "./ConnectionLines.svelte";
@@ -11,9 +12,21 @@ import PersonCard from "./PersonCard.svelte";
 import PersonEditor from "./PersonEditor.svelte";
 import { canvas } from "./pan.svelte";
 
+interface PovCollapseState {
+  children: Set<string>;
+  parents: Set<string>;
+  expandedParents: Set<string>;
+}
+
+const emptyPovCollapse: PovCollapseState = {
+  children: new Set<string>(),
+  parents: new Set<string>(),
+  expandedParents: new Set<string>(),
+};
+
 let pov = $state<{ focalId: string }>({ focalId: family.sourceId ?? "" });
-let collapsedChildren = $state<Set<string>>(new Set());
-let collapsedParents = $state<Set<string>>(new Set());
+let mode = $state<DisplayMode>("all");
+let collapseByPov = $state<Record<string, PovCollapseState>>({});
 let openMenuId = $state<string | null>(null);
 let recenterKey = $state(0);
 let editing = $state<{ id: string | null } | null>(null);
@@ -26,13 +39,18 @@ let addRelativePreset = $state<{
 } | null>(null);
 
 const fullData = $derived({ people: family.people, families: family.families });
-const subtreeData = $derived(computeSubtree(fullData, pov.focalId));
+const povCollapse = $derived(collapseByPov[pov.focalId] ?? emptyPovCollapse);
+const collapsedChildren = $derived(povCollapse.children);
+const collapsedParents = $derived(povCollapse.parents);
+const expandedParents = $derived(povCollapse.expandedParents);
+const subtreeData = $derived(computeSubtree(fullData, pov.focalId, { mode }));
 const viewData = $derived(
-  filterCollapsed(subtreeData, collapsedChildren, collapsedParents, {
+  filterCollapsed(subtreeData, fullData, collapsedChildren, collapsedParents, {
     focalId: pov.focalId,
+    expandedParents,
   }),
 );
-const actions = $derived(branchActions(subtreeData, pov.focalId));
+const actions = $derived(branchActions(fullData, pov.focalId));
 const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
 const focal = $derived(family.people[pov.focalId] ?? null);
@@ -140,10 +158,15 @@ function handleAction(personId: string, action: CardAction) {
       openAddRelative(personId, "father");
       break;
     case "toggleChildren":
-      collapsedChildren = toggleSet(collapsedChildren, personId);
+      toggleCollapse("children", personId);
       break;
     case "toggleParents":
-      collapsedParents = toggleSet(collapsedParents, personId);
+      toggleCollapse(
+        actions.get(personId)?.parentsHiddenByDefault
+          ? "expandedParents"
+          : "parents",
+        personId,
+      );
       break;
     case "makeSource":
       family.setSource(personId);
@@ -152,11 +175,19 @@ function handleAction(personId: string, action: CardAction) {
   }
 }
 
-function toggleSet(set: Set<string>, id: string): Set<string> {
-  const next = new Set(set);
-  if (next.has(id)) next.delete(id);
-  else next.add(id);
-  return next;
+function toggleCollapse(kind: keyof PovCollapseState, personId: string) {
+  const current = collapseByPov[pov.focalId] ?? {
+    children: new Set<string>(),
+    parents: new Set<string>(),
+    expandedParents: new Set<string>(),
+  };
+  const next = new Set(current[kind]);
+  if (next.has(personId)) next.delete(personId);
+  else next.add(personId);
+  collapseByPov = {
+    ...collapseByPov,
+    [pov.focalId]: { ...current, [kind]: next },
+  };
 }
 
 function goBack() {
@@ -190,6 +221,7 @@ function goBack() {
         {@const fam = person.parentFamilyId ? family.families[person.parentFamilyId] : undefined}
         {@const pos = layout.positions.get(person.id)}
         {@const personActions = actions.get(person.id)}
+        {@const parentsHidden = (personActions?.parentsHiddenByDefault ?? false) ? !expandedParents.has(person.id) : collapsedParents.has(person.id)}
         {#if pos}
           <PersonCard
             {person}
@@ -198,7 +230,7 @@ function goBack() {
             selected={family.selectedId === person.id}
             menuOpen={openMenuId === person.id}
             childrenCollapsed={collapsedChildren.has(person.id)}
-            parentsCollapsed={collapsedParents.has(person.id)}
+            parentsCollapsed={parentsHidden}
             canToggleChildren={personActions?.canCollapseChildren ?? false}
             canToggleParents={personActions?.canCollapseParents ?? false}
             motherMissing={fam?.wifeId === undefined}
@@ -248,6 +280,31 @@ function goBack() {
       {/if}
     {/if}
   </div>
+
+  {#if visibleList.length > 0}
+    <div
+      class="absolute left-4 top-16 flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow"
+    >
+      {#each ([
+        { value: "all", label: "All relatives" },
+        { value: "direct", label: "Direct relatives" },
+        { value: "directAndChildren", label: "Direct + their children" },
+      ] as const) as item (item.value)}
+        <button
+          class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+          class:bg-stone-900={mode === item.value}
+          class:text-white={mode === item.value}
+          class:bg-stone-100={mode !== item.value}
+          class:text-stone-600={mode !== item.value}
+          class:hover:bg-stone-200={mode !== item.value}
+          type="button"
+          onclick={() => (mode = item.value)}
+        >
+          {item.label}
+        </button>
+      {/each}
+    </div>
+  {/if}
 
   {#if focal && !onSource}
     <div

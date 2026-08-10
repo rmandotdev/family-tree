@@ -19,7 +19,6 @@ function tree(people: Person[], families: Family[]): TreeData {
   return {
     people: Object.fromEntries(people.map((p) => [p.id, p])),
     families: Object.fromEntries(families.map((f) => [f.id, f])),
-    sourceId: null,
   };
 }
 
@@ -33,7 +32,6 @@ describe("computeSubtree", () => {
     expect(computeSubtree(t, "nope")).toEqual({
       people: {},
       families: {},
-      sourceId: null,
     });
   });
 
@@ -215,5 +213,123 @@ describe("computeSubtree", () => {
     expect(sub.families).toHaveProperty("f3");
     expect(sub.families).not.toHaveProperty("f1");
     expect(sub.families).not.toHaveProperty("f4");
+  });
+
+  it("direct mode shows the direct line without siblings' families or aunts/uncles", () => {
+    const adam = person("adam");
+    const eve = person("eve");
+    const john = person("john");
+    const mary = person("mary");
+    const bob = person("bob");
+    const alice = person("alice");
+    const charlie = person("charlie");
+    const david = person("david");
+    const zoe = person("zoe");
+    const mark = person("mark");
+    const eveLu = person("evelu");
+    const fred = person("fred");
+    const t = tree(
+      [
+        adam,
+        eve,
+        john,
+        mary,
+        bob,
+        alice,
+        charlie,
+        david,
+        zoe,
+        mark,
+        eveLu,
+        fred,
+      ],
+      [
+        family("f1", adam.id, eve.id, [john.id]),
+        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
+        family("f3", david.id, alice.id, [zoe.id]),
+        family("f4", charlie.id, eveLu.id, [fred.id]),
+        family("f5", mark.id, undefined, [david.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, zoe.id, { mode: "direct" });
+
+    expect(ids(sub)).toEqual(
+      [adam, eve, john, mary, alice, david, zoe, mark].map((p) => p.id).sort(),
+    );
+    expect(sub.families).toHaveProperty("f1");
+    expect(sub.families).toHaveProperty("f2");
+    expect(sub.families).toHaveProperty("f3");
+    expect(sub.families).toHaveProperty("f5");
+    expect(sub.families).not.toHaveProperty("f4");
+  });
+
+  it("directAndChildren mode adds the ancestors' and siblings' children", () => {
+    const adam = person("adam");
+    const eve = person("eve");
+    const john = person("john");
+    const mary = person("mary");
+    const bob = person("bob");
+    const alice = person("alice");
+    const charlie = person("charlie");
+    const david = person("david");
+    const zoe = person("zoe");
+    const mark = person("mark");
+    const eveLu = person("evelu");
+    const fred = person("fred");
+    const t = tree(
+      [
+        adam,
+        eve,
+        john,
+        mary,
+        bob,
+        alice,
+        charlie,
+        david,
+        zoe,
+        mark,
+        eveLu,
+        fred,
+      ],
+      [
+        family("f1", adam.id, eve.id, [john.id]),
+        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
+        family("f3", david.id, alice.id, [zoe.id]),
+        family("f4", charlie.id, eveLu.id, [fred.id]),
+        family("f5", mark.id, undefined, [david.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, zoe.id, { mode: "directAndChildren" });
+
+    expect(ids(sub)).toEqual(
+      [adam, eve, john, mary, bob, alice, charlie, david, zoe, mark]
+        .map((p) => p.id)
+        .sort(),
+    );
+    expect(sub.families).toHaveProperty("f2");
+    expect(sub.families).not.toHaveProperty("f4");
+  });
+
+  it("direct mode shows the POV's siblings without their partners and children", () => {
+    const john = person("john");
+    const mary = person("mary");
+    const bob = person("bob");
+    const alice = person("alice");
+    const zoe = person("zoe");
+    const t = tree(
+      [john, mary, bob, alice, zoe],
+      [
+        family("f1", john.id, mary.id, [bob.id, alice.id]),
+        family("f2", alice.id, undefined, [zoe.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, alice.id, { mode: "direct" });
+
+    expect(ids(sub)).toEqual(
+      [john, mary, bob, alice, zoe].map((p) => p.id).sort(),
+    );
   });
 });
