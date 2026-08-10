@@ -1,6 +1,7 @@
 <script lang="ts">
-import { tree } from "#lib/family/tree.svelte";
+import { tree } from "$lib/family/tree.svelte";
 import type { Gender, Person, PersonInput } from "$lib/family/types";
+import Modal from "./ui/Modal.svelte";
 
 let {
   person,
@@ -116,28 +117,7 @@ function remove() {
 }
 </script>
 
-<div class="fixed inset-0 z-50 flex items-center justify-center p-4">
-  <button
-    class="absolute inset-0 cursor-default bg-black/40"
-    type="button"
-    onclick={onClose}
-    aria-label="Close editor"
-    tabindex="-1"
-  ></button>
-  <div
-    class="relative flex max-h-[90vh] w-full max-w-md flex-col rounded-xl bg-white p-6 shadow-xl"
-    role="dialog"
-    aria-modal="true"
-    tabindex="-1"
-    aria-label={title}
-    onkeydown={(e) => {
-      if (e.key === "Escape") onClose();
-    }}
-  >
-    <h2 class="text-lg font-semibold text-stone-900">
-      {title}
-    </h2>
-
+<Modal {title} {onClose}>
     <form
       class="mt-4 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pr-1"
       onsubmit={(e) => {
@@ -204,7 +184,8 @@ function remove() {
             <option value="">—</option>
             {#each spouseOptions as option (option.id)}
               <option value={option.id}>
-                {option.firstName} {option.lastName}
+                {option.firstName}
+                {option.lastName}
               </option>
             {/each}
           </select>
@@ -220,7 +201,8 @@ function remove() {
               <option value="">—</option>
               {#each motherOptions as option (option.id)}
                 <option value={option.id}>
-                  {option.firstName} {option.lastName}
+                  {option.firstName}
+                  {option.lastName}
                 </option>
               {/each}
             </select>
@@ -234,7 +216,8 @@ function remove() {
               <option value="">—</option>
               {#each fatherOptions as option (option.id)}
                 <option value={option.id}>
-                  {option.firstName} {option.lastName}
+                  {option.firstName}
+                  {option.lastName}
                 </option>
               {/each}
             </select>
@@ -277,5 +260,4 @@ function remove() {
         </div>
       </div>
     </form>
-  </div>
-</div>
+</Modal>

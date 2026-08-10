@@ -73,7 +73,8 @@ const lifespan = $derived(formatLifespan(person));
     onclick={onToggleMenu}
   >
     <span class="block truncate font-semibold text-stone-800">
-      {person.firstName} {person.lastName}
+      {person.firstName}
+      {person.lastName}
     </span>
     {#if lifespan}
       <span class="mt-0.5 block truncate text-xs text-stone-500"

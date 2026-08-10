@@ -2,9 +2,6 @@
   "name": "family-tree",
   "private": true,
   "type": "module",
-  "imports": {
-    "#lib/*": "./src/lib/*.ts"
-  },
   "scripts": {
     "build": "vite build",
     "deploy": "bun run --sequential build wrangler:deploy",

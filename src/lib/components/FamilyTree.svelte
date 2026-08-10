@@ -1,9 +1,9 @@
 <script lang="ts">
-import { tree } from "#lib/family/tree.svelte";
 import { branchActions, filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
 import type { DisplayMode } from "$lib/family/subtree";
 import { computeSubtree } from "$lib/family/subtree";
+import { tree } from "$lib/family/tree.svelte";
 import type { Gender } from "$lib/family/types";
 import ConnectionLines from "./ConnectionLines.svelte";
 import FamilyCanvas from "./FamilyCanvas.svelte";

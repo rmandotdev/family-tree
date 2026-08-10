@@ -128,7 +128,7 @@ $effect(() => {
 >
   <div class="absolute" style:transform="translate({pan.x}px, {pan.y}px)">
     <div
-      style:zoom="{zoom}"
+      style:zoom
       style:width="{contentWidth}px"
       style:height="{contentHeight}px"
     >
