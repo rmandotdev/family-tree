@@ -91,12 +91,15 @@ export function branchActions(
   focalId: string,
 ): Map<string, BranchActions> {
   const { parents, children } = relationsOf(data);
-  const cone = descendantCone(data, focalId);
+  const downCone = descendantCone(data, focalId);
+  const upCone = upClosure(parents.get(focalId) ?? [], parents);
   const result = new Map<string, BranchActions>();
   for (const id of Object.keys(data.people)) {
     result.set(id, {
-      canCollapseParents: (parents.get(id)?.length ?? 0) > 0 && !cone.has(id),
-      canCollapseChildren: (children.get(id)?.length ?? 0) > 0,
+      canCollapseParents:
+        (parents.get(id)?.length ?? 0) > 0 && !downCone.has(id),
+      canCollapseChildren:
+        (children.get(id)?.length ?? 0) > 0 && !upCone.has(id),
     });
   }
   return result;
@@ -134,6 +137,7 @@ export function filterCollapsed(
 
   function pruneDescendants(id: string) {
     for (const cid of children.get(id) ?? []) {
+      if (cid === focalId) continue;
       if (pruned.has(cid)) continue;
       pruned.add(cid);
       pruneDescendants(cid);

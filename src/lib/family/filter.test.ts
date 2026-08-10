@@ -259,17 +259,58 @@ describe("filterCollapsed", () => {
     expect(actions.get("eve")?.canCollapseParents).toBe(false);
   });
 
-  it("offers children-collapse only to people with children", () => {
+  it("offers children-collapse only to people with children who are not POV ancestors", () => {
     const t = demoTree();
     const zoe = t.people.zoe;
     const subtree = computeSubtree(t, zoe.id);
     const actions = branchActions(subtree, zoe.id);
 
     expect(actions.get("zoe")?.canCollapseChildren).toBe(false);
-    expect(actions.get("mark")?.canCollapseChildren).toBe(true);
-    expect(actions.get("john")?.canCollapseChildren).toBe(true);
+    expect(actions.get("mark")?.canCollapseChildren).toBe(false);
+    expect(actions.get("john")?.canCollapseChildren).toBe(false);
+    expect(actions.get("david")?.canCollapseChildren).toBe(false);
     expect(actions.get("charlie")?.canCollapseChildren).toBe(true);
     expect(actions.get("bob")?.canCollapseChildren).toBe(false);
+  });
+
+  it("does not offer children-collapse to people connected only by the parent branch", () => {
+    const t = demoTree();
+    const david = t.people.david;
+    const subtree = computeSubtree(t, david.id);
+    const actions = branchActions(subtree, david.id);
+
+    expect(actions.get("mark")?.canCollapseChildren).toBe(false);
+    expect(actions.get("zoe")?.canCollapseParents).toBe(false);
     expect(actions.get("david")?.canCollapseChildren).toBe(true);
+    expect(actions.get("zoe")?.canCollapseChildren).toBe(false);
+  });
+
+  it("does not hide the POV's descendants when collapsing an ancestor's children", () => {
+    const t = demoTree();
+    const david = t.people.david;
+    const subtree = computeSubtree(t, david.id);
+
+    const out = filterCollapsed(subtree, new Set(["mark"]), new Set(), {
+      focalId: david.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "david", "mark", "zoe"]);
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
+  });
+
+  it("still lets the POV collapse their own children branch", () => {
+    const t = demoTree();
+    const david = t.people.david;
+    const subtree = computeSubtree(t, david.id);
+
+    const out = filterCollapsed(subtree, new Set(["david"]), new Set(), {
+      focalId: david.id,
+    });
+
+    expect(ids(out)).toEqual(["alice", "david", "mark"]);
+    expect(out.people).not.toHaveProperty("zoe");
+    expect(out.families).toHaveProperty("f3");
+    expect(out.families).toHaveProperty("f5");
   });
 });
