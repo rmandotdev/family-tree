@@ -37,16 +37,6 @@ function zoomAt(cx: number, cy: number, next: number) {
   interacted = true;
 }
 
-function zoomBy(factor: number) {
-  if (!viewport) return;
-  const rect = viewport.getBoundingClientRect();
-  zoomAt(
-    rect.width / 2,
-    rect.height / 2,
-    clamp(zoom * factor, MIN_ZOOM, MAX_ZOOM),
-  );
-}
-
 $effect(() => {
   const el = viewport;
   if (!el) return;
@@ -85,12 +75,6 @@ function onPointerUp(e: PointerEvent) {
   pointer = null;
   interacted = true;
   if (canvas.isPanning) setTimeout(() => (canvas.isPanning = false), 0);
-}
-
-function resetView() {
-  pan = { x: 0, y: 0 };
-  zoom = 1;
-  interacted = false;
 }
 
 $effect(() => {
@@ -134,33 +118,5 @@ $effect(() => {
     >
       {@render children()}
     </div>
-  </div>
-
-  <div
-    class="absolute bottom-4 right-4 flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white/90 shadow-md"
-  >
-    <button
-      class="cursor-pointer px-3 py-1.5 text-sm hover:bg-stone-100"
-      type="button"
-      onclick={() => zoomBy(1.25)}
-      aria-label="Zoom in"
-    >
-      +
-    </button>
-    <button
-      class="cursor-pointer border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
-      type="button"
-      onclick={resetView}
-    >
-      reset
-    </button>
-    <button
-      class="cursor-pointer border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
-      type="button"
-      onclick={() => zoomBy(0.8)}
-      aria-label="Zoom out"
-    >
-      −
-    </button>
   </div>
 </div>

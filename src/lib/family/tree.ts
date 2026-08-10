@@ -3,7 +3,6 @@ import type { Family, Person, PersonInput } from "./types";
 export interface FamilyTreeState {
   people: Record<string, Person>;
   families: Record<string, Family>;
-  selectedId: { value: string | null };
   sourceId: { value: string | null };
 }
 
@@ -18,7 +17,6 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     };
     people[person.id] = person;
     if (state.sourceId.value === null) state.sourceId.value = person.id;
-    state.selectedId.value = person.id;
     persist();
     return person;
   }
@@ -186,7 +184,6 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     }
 
     delete people[id];
-    if (state.selectedId.value === id) state.selectedId.value = null;
     persist();
   }
 
@@ -379,17 +376,8 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     get list() {
       return Object.values(people);
     },
-    get selectedId() {
-      return state.selectedId.value;
-    },
-    get selected() {
-      return state.selectedId.value ? people[state.selectedId.value] : null;
-    },
     get sourceId() {
       return state.sourceId.value;
-    },
-    select(id: string | null) {
-      state.selectedId.value = id;
     },
     addPerson,
     updatePerson,

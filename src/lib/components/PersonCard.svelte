@@ -19,7 +19,6 @@ let {
   person,
   x,
   y,
-  selected,
   menuOpen,
   childrenCollapsed,
   parentsCollapsed,
@@ -34,7 +33,6 @@ let {
   person: Person;
   x: number;
   y: number;
-  selected: boolean;
   menuOpen: boolean;
   childrenCollapsed: boolean;
   parentsCollapsed: boolean;
@@ -56,9 +54,7 @@ const accent = $derived(
 );
 
 const cardClass = $derived(
-  `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 text-left shadow-md ${accent} ${
-    selected ? "ring-2 ring-sky-500" : "hover:shadow-lg"
-  }`,
+  `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 text-left shadow-md ${accent} hover:shadow-lg`,
 );
 
 const lifespan = $derived(formatLifespan(person));

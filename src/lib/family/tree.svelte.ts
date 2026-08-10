@@ -7,10 +7,9 @@ import type { Family, Person, TreeDataWithSource } from "./types";
 
 const people = $state<Record<string, Person>>({});
 const families = $state<Record<string, Family>>({});
-const selectedId = $state<{ value: string | null }>({ value: null });
 const sourceId = $state<{ value: string | null }>({ value: null });
 
-const state: FamilyTreeState = { people, families, selectedId, sourceId };
+const state: FamilyTreeState = { people, families, sourceId };
 
 export const tree = createFamilyTree(state, () => {
   if (browser)

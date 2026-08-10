@@ -4,12 +4,7 @@ import { createFamilyTree } from "./tree";
 import type { PersonInput } from "./types";
 
 function makeState(): FamilyTreeState {
-  return {
-    people: {},
-    families: {},
-    selectedId: { value: null },
-    sourceId: { value: null },
-  };
+  return { people: {}, families: {}, sourceId: { value: null } };
 }
 
 function input(firstName: string, gender: PersonInput["gender"]): PersonInput {

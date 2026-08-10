@@ -55,11 +55,9 @@ const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
 const focal = $derived(tree.people[pov.focalId] ?? null);
 const onSource = $derived(pov.focalId === tree.sourceId);
-const selected = $derived(tree.selected);
 
 function toggleMenu(id: string) {
   if (canvas.isPanning) return;
-  tree.select(id);
   openMenuId = openMenuId === id ? null : id;
 }
 
@@ -139,7 +137,6 @@ function handleAction(personId: string, action: CardAction) {
       break;
     case "focus":
       pov = { focalId: personId };
-      tree.select(personId);
       recenterKey += 1;
       break;
     case "addChild":
@@ -170,7 +167,6 @@ function handleAction(personId: string, action: CardAction) {
       break;
     case "makeSource":
       tree.setSource(personId);
-      tree.select(personId);
       break;
   }
 }
@@ -192,18 +188,45 @@ function toggleCollapse(kind: keyof PovCollapseState, personId: string) {
 
 function goBack() {
   pov = { focalId: tree.sourceId ?? "" };
-  tree.select(tree.sourceId);
   recenterKey += 1;
 }
 </script>
 
-<div class="relative h-full w-full overflow-hidden bg-stone-100">
-  <FamilyCanvas
-    contentWidth={layout.width}
-    contentHeight={layout.height}
-    {recenterKey}
+<div class="relative flex h-full w-full flex-col overflow-hidden bg-stone-100">
+  <header
+    class="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-stone-200 bg-white px-4 shadow-sm"
   >
-    {#if visibleList.length > 0}
+    <div></div>
+    <div
+      class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
+    >
+      {#each ([
+        { value: "all", label: "All relatives" },
+        { value: "direct", label: "Direct relatives" },
+        { value: "directAndChildren", label: "Direct + their children" },
+      ] as const) as item (item.value)}
+        <button
+          class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+          class:bg-stone-900={mode === item.value}
+          class:text-white={mode === item.value}
+          class:bg-stone-100={mode !== item.value}
+          class:text-stone-600={mode !== item.value}
+          class:hover:bg-stone-200={mode !== item.value}
+          type="button"
+          onclick={() => (mode = item.value)}
+        >
+          {item.label}
+        </button>
+      {/each}
+    </div>
+  </header>
+
+  <div class="relative flex-1">
+    <FamilyCanvas
+      contentWidth={layout.width}
+      contentHeight={layout.height}
+      {recenterKey}
+    >
       <svg
         class="absolute left-0 top-0"
         style:width="{layout.width}px"
@@ -227,7 +250,6 @@ function goBack() {
             {person}
             x={pos.x}
             y={pos.y}
-            selected={tree.selectedId === person.id}
             menuOpen={openMenuId === person.id}
             childrenCollapsed={collapsedChildren.has(person.id)}
             parentsCollapsed={parentsHidden}
@@ -241,75 +263,12 @@ function goBack() {
           />
         {/if}
       {/each}
-    {:else}
-      <p
-        class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-stone-400"
-      >
-        Add your first family member to get started.
-      </p>
-    {/if}
-  </FamilyCanvas>
-
-  <div class="absolute left-4 top-4 flex items-center gap-2">
-    <button
-      class="cursor-pointer rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-stone-700"
-      type="button"
-      onclick={() => openEditor(null)}
-    >
-      + Add person
-    </button>
-    {#if selected}
-      <button
-        class="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow hover:bg-stone-50"
-        type="button"
-        onclick={() => openEditor(selected.id)}
-      >
-        Edit
-      </button>
-      {#if selected.id !== tree.sourceId}
-        <button
-          class="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
-          type="button"
-          onclick={() => {
-            if (window.confirm(`Delete ${selected.firstName} ${selected.lastName}?`)) {
-              tree.deletePerson(selected.id);
-            }
-          }}
-        >
-          Delete
-        </button>
-      {/if}
-    {/if}
+    </FamilyCanvas>
   </div>
-
-  {#if visibleList.length > 0}
-    <div
-      class="absolute left-4 top-16 flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow"
-    >
-      {#each ([
-        { value: "all", label: "All relatives" },
-        { value: "direct", label: "Direct relatives" },
-        { value: "directAndChildren", label: "Direct + their children" },
-      ] as const) as item (item.value)}
-        <button
-          class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-          class:bg-stone-900={mode === item.value}
-          class:text-white={mode === item.value}
-          class:bg-stone-100={mode !== item.value}
-          class:text-stone-600={mode !== item.value}
-          class:hover:bg-stone-200={mode !== item.value}
-          type="button"
-          onclick={() => (mode = item.value)}
-        >
-          {item.label}
-        </button>
-      {/each}
-    </div>
-  {/if}
 
   {#if focal && !onSource}
     <div
-      class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-stone-200 bg-white/95 px-4 py-2 shadow-md"
+      class="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-lg border border-stone-200 bg-white/95 px-4 py-2 shadow-md"
     >
       <span class="text-sm text-stone-700">
         Showing tree around <strong>{focal.firstName} {focal.lastName}</strong>
