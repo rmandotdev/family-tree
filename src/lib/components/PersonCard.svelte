@@ -18,15 +18,19 @@ let {
   onOpen: (id: string) => void;
 } = $props();
 
-const accent = {
-  male: "border-sky-400",
-  female: "border-rose-400",
-  unknown: "border-stone-400",
-}[person.gender];
+const accent = $derived(
+  {
+    male: "border-sky-400",
+    female: "border-rose-400",
+    unknown: "border-stone-400",
+  }[person.gender],
+);
 
-const cardClass = `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 text-left shadow-md ${accent} ${
-  selected ? "ring-2 ring-sky-500" : "hover:shadow-lg"
-}`;
+const cardClass = $derived(
+  `absolute cursor-pointer rounded-lg border-l-4 bg-white p-2 text-left shadow-md ${accent} ${
+    selected ? "ring-2 ring-sky-500" : "hover:shadow-lg"
+  }`,
+);
 
 const lifespan = $derived(formatLifespan(person));
 </script>

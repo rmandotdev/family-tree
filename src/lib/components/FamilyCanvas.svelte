@@ -102,6 +102,7 @@ $effect(() => {
 });
 </script>
 
+<!-- svelte-ignore a11y_no_static_element_interactions (canvas panning) -->
 <div
   class="absolute inset-0 touch-none select-none overflow-hidden"
   bind:this={viewport}
