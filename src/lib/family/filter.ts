@@ -148,7 +148,9 @@ export function filterCollapsed(
 
   function pruneDescendants(id: string) {
     for (const cid of children.get(id) ?? []) {
-      if (cid === focalId) continue;
+      if (cid === focalId || (focalId && spouses.get(focalId)?.includes(cid))) {
+        continue;
+      }
       if (pruned.has(cid)) continue;
       pruned.add(cid);
       pruneDescendants(cid);

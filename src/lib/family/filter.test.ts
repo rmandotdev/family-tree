@@ -349,4 +349,18 @@ describe("filterCollapsed", () => {
     expect(out.families).toHaveProperty("f3");
     expect(out.families).toHaveProperty("f5");
   });
+
+  it("does not hide the POV's spouse and descendants when collapsing a parent-in-law's children branch", () => {
+    const t = demoTree();
+    const subtree = computeSubtree(t, "david");
+    const out = filterCollapsed(subtree, t, new Set(["john"]), new Set(), {
+      focalId: "david",
+      expandedParents: new Set(["alice"]),
+    });
+
+    expect(out.people).toHaveProperty("alice");
+    expect(out.people).toHaveProperty("zoe");
+    expect(out.people).not.toHaveProperty("bob");
+    expect(out.people).not.toHaveProperty("charlie");
+  });
 });
