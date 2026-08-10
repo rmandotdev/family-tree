@@ -38,7 +38,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
       ? families[person.parentFamilyId]
       : undefined;
     return [fam?.husbandId, fam?.wifeId].filter(
-      (parentId): parentId is string => parentId !== undefined,
+      (parentId) => parentId !== undefined,
     );
   }
 
@@ -86,7 +86,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
   function sharedFamilyOf(aId: string, bId: string): Family | undefined {
     return Object.values(families).find((fam) => {
       const parents = [fam.husbandId, fam.wifeId].filter(
-        (id): id is string => id !== undefined,
+        (id) => id !== undefined,
       );
       return parents.includes(aId) && parents.includes(bId);
     });
@@ -130,7 +130,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     const fam = families[familyId];
     if (!fam) return;
     const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id): id is string => id !== undefined,
+      (id) => id !== undefined,
     );
     for (const id of parentIds) {
       const person = people[id];
@@ -325,7 +325,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
         }
       }
       const parentIds = [fam.husbandId, fam.wifeId].filter(
-        (id): id is string => id !== undefined,
+        (id) => id !== undefined,
       );
       const children = fam.childrenIds.filter(
         (id) => people[id] !== undefined && !parentIds.includes(id),

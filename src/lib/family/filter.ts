@@ -18,7 +18,7 @@ function relationsOf(data: TreeData): Relations {
   }
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id): id is string => id !== undefined,
+      (id) => id !== undefined,
     );
     for (const childId of fam.childrenIds) {
       if (!people[childId]) continue;
@@ -203,7 +203,7 @@ export function filterCollapsed(
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id): id is string => id !== undefined,
+      (id) => id !== undefined,
     );
     const keptParents = parentIds.filter((id) => kept.has(id));
     const keptChildren = fam.childrenIds.filter((id) => kept.has(id));

@@ -8,8 +8,8 @@ function person(id: string, gender: Gender = "unknown"): Person {
 
 function family(
   id: string,
-  husband: string,
-  wife: string | undefined,
+  husband?: string,
+  wife?: string,
   children: string[] = [],
 ): Family {
   return { id, husbandId: husband, wifeId: wife, childrenIds: children };
@@ -331,5 +331,53 @@ describe("computeSubtree", () => {
     expect(ids(sub)).toEqual(
       [john, mary, bob, alice, zoe].map((p) => p.id).sort(),
     );
+  });
+
+  it("sorts children in families so female children of direct ancestors are first and male children of direct ancestors are last", () => {
+    const grandpaP = person("grandpaP", "male");
+    const grandmaP = person("grandmaP", "female");
+    const father = person("father", "male");
+    const uncleP = person("uncleP", "male");
+    const auntP = person("auntP", "male");
+
+    const grandpaM = person("grandpaM", "male");
+    const grandmaM = person("grandmaM", "female");
+    const mother = person("mother", "female");
+    const auntM = person("auntM", "female");
+    const uncleM = person("uncleM", "female");
+
+    const pov = person("pov", "female");
+
+    const t = tree(
+      [
+        grandpaP,
+        grandmaP,
+        father,
+        uncleP,
+        grandpaM,
+        grandmaM,
+        mother,
+        auntM,
+        pov,
+      ],
+      [
+        family("f1", grandpaP.id, grandmaP.id, [
+          uncleP.id,
+          father.id,
+          auntP.id,
+        ]),
+        family("f2", grandpaM.id, grandmaM.id, [
+          auntM.id,
+          mother.id,
+          uncleM.id,
+        ]),
+        family("f3", father.id, mother.id, [pov.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, pov.id);
+
+    expect(sub.families.f1.childrenIds).toEqual(["uncleP", "auntP", "father"]);
+    expect(sub.families.f2.childrenIds).toEqual(["mother", "auntM", "uncleM"]);
   });
 });

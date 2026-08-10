@@ -43,7 +43,7 @@ export function childSegments(
     if (couple.children.length === 0) continue;
     const tops = couple.children
       .map((id) => positions.get(id))
-      .filter((p): p is Point => p !== undefined);
+      .filter((p) => p !== undefined);
     if (tops.length === 0) continue;
     const xs = tops.map((p) => p.x + CARD_W / 2);
     const topY = tops[0].y;
