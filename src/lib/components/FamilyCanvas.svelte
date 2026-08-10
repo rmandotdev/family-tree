@@ -126,14 +126,14 @@ $effect(() => {
   onpointerup={onPointerUp}
   onpointercancel={onPointerUp}
 >
-  <div
-    class="absolute left-0 top-0 will-change-transform"
-    style:transform="translate({pan.x}px, {pan.y}px) scale({zoom})"
-    style:transform-origin="0 0"
-    style:width="{contentWidth}px"
-    style:height="{contentHeight}px"
-  >
-    {@render children()}
+  <div class="absolute" style:transform="translate({pan.x}px, {pan.y}px)">
+    <div
+      style:zoom="{zoom}"
+      style:width="{contentWidth}px"
+      style:height="{contentHeight}px"
+    >
+      {@render children()}
+    </div>
   </div>
 
   <div
