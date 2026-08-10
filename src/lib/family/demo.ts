@@ -101,6 +101,25 @@ export function createDemoTree(): TreeDataWithSource {
     birthDate: "1996-06-21",
   });
 
+  const min = add({
+    firstName: "Min",
+    lastName: "Lu",
+    gender: "male",
+    birthDate: "1968-04-10",
+  });
+  const wei = add({
+    firstName: "Wei",
+    lastName: "Lu",
+    gender: "female",
+    birthDate: "1970-09-22",
+  });
+  const ken = add({
+    firstName: "Ken",
+    lastName: "Lu",
+    gender: "male",
+    birthDate: "1999-01-14",
+  });
+
   const fred = add({
     firstName: "Fred",
     lastName: "Smith",
@@ -112,6 +131,7 @@ export function createDemoTree(): TreeDataWithSource {
   addFamily(john, mary, [bob, alice, charlie]);
   addFamily(david, alice, [zoe]);
   addFamily(charlie, eveLu, [fred]);
+  addFamily(min, wei, [eveLu, ken]);
 
   const markFamily: Family = {
     id: crypto.randomUUID(),
