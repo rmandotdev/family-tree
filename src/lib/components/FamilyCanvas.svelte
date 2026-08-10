@@ -63,7 +63,7 @@ $effect(() => {
 });
 
 function onPointerDown(e: PointerEvent) {
-  if (e.target !== viewport) return;
+  if (e.target instanceof Element && e.target.closest("button")) return;
   pointer = { id: e.pointerId, x: e.clientX, y: e.clientY };
   viewport?.setPointerCapture(e.pointerId);
 }
