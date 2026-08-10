@@ -140,7 +140,7 @@ $effect(() => {
     class="absolute bottom-4 right-4 flex flex-col overflow-hidden rounded-lg border border-stone-200 bg-white/90 shadow-md"
   >
     <button
-      class="px-3 py-1.5 text-sm hover:bg-stone-100"
+      class="cursor-pointer px-3 py-1.5 text-sm hover:bg-stone-100"
       type="button"
       onclick={() => zoomBy(1.25)}
       aria-label="Zoom in"
@@ -148,14 +148,14 @@ $effect(() => {
       +
     </button>
     <button
-      class="border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
+      class="cursor-pointer border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
       type="button"
       onclick={resetView}
     >
       reset
     </button>
     <button
-      class="border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
+      class="cursor-pointer border-t border-stone-200 px-3 py-1.5 text-sm hover:bg-stone-100"
       type="button"
       onclick={() => zoomBy(0.8)}
       aria-label="Zoom out"

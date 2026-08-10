@@ -89,7 +89,7 @@ const lifespan = $derived(formatLifespan(person));
       style:top={`${CARD_H + 4}px`}
     >
       <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
         onclick={() => onAction("edit")}
       >
@@ -97,7 +97,7 @@ const lifespan = $derived(formatLifespan(person));
       </button>
       {#if !isPov}
         <button
-          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
           type="button"
           onclick={() => onAction("focus")}
         >
@@ -106,21 +106,21 @@ const lifespan = $derived(formatLifespan(person));
       {/if}
       <div class="my-1 border-t border-stone-100"></div>
       <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
         onclick={() => onAction("addChild")}
       >
         Add a child
       </button>
       <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
         onclick={() => onAction("addSpouse")}
       >
         Add a spouse
       </button>
       <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
         onclick={() => onAction("addSibling")}
       >
@@ -128,7 +128,7 @@ const lifespan = $derived(formatLifespan(person));
       </button>
       {#if motherMissing}
         <button
-          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
           type="button"
           onclick={() => onAction("addMother")}
         >
@@ -137,7 +137,7 @@ const lifespan = $derived(formatLifespan(person));
       {/if}
       {#if fatherMissing}
         <button
-          class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+          class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
           type="button"
           onclick={() => onAction("addFather")}
         >
@@ -148,7 +148,7 @@ const lifespan = $derived(formatLifespan(person));
         <div class="my-1 border-t border-stone-100"></div>
         {#if canToggleChildren}
           <button
-            class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+            class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
             type="button"
             onclick={() => onAction("toggleChildren")}
           >
@@ -158,7 +158,7 @@ const lifespan = $derived(formatLifespan(person));
         {/if}
         {#if canToggleParents}
           <button
-            class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+            class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
             type="button"
             onclick={() => onAction("toggleParents")}
           >
@@ -169,7 +169,7 @@ const lifespan = $derived(formatLifespan(person));
       {/if}
       <div class="my-1 border-t border-stone-100"></div>
       <button
-        class="block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
+        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
         onclick={() => onAction("makeSource")}
       >

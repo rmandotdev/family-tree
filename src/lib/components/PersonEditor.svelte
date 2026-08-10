@@ -235,7 +235,7 @@ function remove() {
       <div>
         {#if person && person.id !== tree.sourceId}
           <button
-            class="rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
+            class="cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
             type="button"
             onclick={remove}
           >
@@ -245,14 +245,14 @@ function remove() {
       </div>
       <div class="flex gap-2">
         <button
-          class="rounded-md border border-stone-300 px-4 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
+          class="cursor-pointer rounded-md border border-stone-300 px-4 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-50"
           type="button"
           onclick={onClose}
         >
           Cancel
         </button>
         <button
-          class="rounded-md bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
+          class="cursor-pointer rounded-md bg-sky-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-sky-700"
           type="submit"
         >
           Save

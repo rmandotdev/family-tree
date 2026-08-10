@@ -252,7 +252,7 @@ function goBack() {
 
   <div class="absolute left-4 top-4 flex items-center gap-2">
     <button
-      class="rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-stone-700"
+      class="cursor-pointer rounded-lg bg-stone-900 px-3 py-1.5 text-sm font-medium text-white shadow hover:bg-stone-700"
       type="button"
       onclick={() => openEditor(null)}
     >
@@ -260,7 +260,7 @@ function goBack() {
     </button>
     {#if selected}
       <button
-        class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow hover:bg-stone-50"
+        class="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 shadow hover:bg-stone-50"
         type="button"
         onclick={() => openEditor(selected.id)}
       >
@@ -268,7 +268,7 @@ function goBack() {
       </button>
       {#if selected.id !== tree.sourceId}
         <button
-          class="rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
+          class="cursor-pointer rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-red-600 shadow hover:bg-red-50"
           type="button"
           onclick={() => {
             if (window.confirm(`Delete ${selected.firstName} ${selected.lastName}?`)) {
@@ -292,7 +292,7 @@ function goBack() {
         { value: "directAndChildren", label: "Direct + their children" },
       ] as const) as item (item.value)}
         <button
-          class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+          class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
           class:bg-stone-900={mode === item.value}
           class:text-white={mode === item.value}
           class:bg-stone-100={mode !== item.value}
@@ -315,7 +315,7 @@ function goBack() {
         Showing tree around <strong>{focal.firstName} {focal.lastName}</strong>
       </span>
       <button
-        class="rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700"
+        class="cursor-pointer rounded-md bg-stone-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-stone-700"
         type="button"
         onclick={goBack}
       >
