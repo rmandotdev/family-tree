@@ -71,6 +71,38 @@ export function computeLayout(data: TreeData): LayoutResult {
     assigned.add(p.id);
   }
 
+  const sameRowParent = new Map<CoupleLayout, CoupleLayout>();
+  const find = (c: CoupleLayout): CoupleLayout => {
+    const p = sameRowParent.get(c);
+    if (!p) return c;
+    const root = find(p);
+    sameRowParent.set(c, root);
+    return root;
+  };
+  const union = (a: CoupleLayout, b: CoupleLayout) => {
+    const ra = find(a);
+    const rb = find(b);
+    if (ra !== rb) sameRowParent.set(rb, ra);
+  };
+
+  const siblingGroups: CoupleLayout[][] = [];
+  for (const fam of Object.values(families)) {
+    if (fam.husbandId !== undefined || fam.wifeId !== undefined) continue;
+    const members = fam.childrenIds
+      .map((id) => coupleOf.get(id))
+      .filter((c): c is CoupleLayout => c !== undefined);
+    for (let i = 1; i < members.length; i++) union(members[0], members[i]);
+    if (members.length >= 2) siblingGroups.push(members);
+  }
+
+  const groupMembers = new Map<CoupleLayout, CoupleLayout[]>();
+  for (const couple of couples) {
+    const root = find(couple);
+    const arr = groupMembers.get(root) ?? [];
+    arr.push(couple);
+    groupMembers.set(root, arr);
+  }
+
   const parentCouples = new Map<CoupleLayout, CoupleLayout[]>();
   const childCouples = new Map<CoupleLayout, CoupleLayout[]>();
   for (const couple of couples) {
@@ -101,6 +133,17 @@ export function computeLayout(data: TreeData): LayoutResult {
       for (const parent of parentCouples.get(couple) ?? []) {
         if ((rows.get(parent) ?? 0) < r - 1) {
           rows.set(parent, r - 1);
+          changed = true;
+        }
+      }
+    }
+    for (const members of groupMembers.values()) {
+      if (members.length < 2) continue;
+      let max = 0;
+      for (const member of members) max = Math.max(max, rows.get(member) ?? 0);
+      for (const member of members) {
+        if ((rows.get(member) ?? 0) < max) {
+          rows.set(member, max);
           changed = true;
         }
       }
@@ -236,11 +279,8 @@ export function computeLayout(data: TreeData): LayoutResult {
   }
 
   const positions = new Map<string, Point>();
-  const topBusPadding = Object.values(families).some(
-    (fam) =>
-      fam.husbandId === undefined &&
-      fam.wifeId === undefined &&
-      fam.childrenIds.filter((id) => byId.has(id)).length >= 2,
+  const topBusPadding = siblingGroups.some((members) =>
+    members.every((m) => (rows.get(m) ?? 0) === 0),
   )
     ? BUS_OFFSET
     : 0;

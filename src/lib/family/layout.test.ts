@@ -58,6 +58,32 @@ describe("computeLayout", () => {
     expect(layout.height).toBe(BUS_OFFSET + CARD_H + MARGIN * 2);
   });
 
+  it("aligns a parentless sibling with its in-couple sibling row", () => {
+    const me = person("me");
+    const father = person("father", "male");
+    const mother = person("mother", "female");
+    const grandpa = person("grandpa", "male");
+    const uncle = person("uncle", "male");
+    const layout = computeLayout(
+      tree(
+        [me, father, mother, grandpa, uncle],
+        [
+          family("f1", father.id, mother.id, [me.id]),
+          family("f2", grandpa.id, undefined, [father.id]),
+          family("f3", undefined, undefined, [mother.id, uncle.id]),
+        ],
+      ),
+    );
+
+    const parentsRow = pos(layout, father.id).y;
+    expect(pos(layout, mother.id).y).toBe(parentsRow);
+    expect(pos(layout, uncle.id).y).toBe(parentsRow);
+    expect(pos(layout, grandpa.id).y).toBeLessThan(parentsRow);
+    expect(pos(layout, me.id).y).toBeGreaterThan(parentsRow);
+    expect(pos(layout, uncle.id).x).toBe(pos(layout, mother.id).x + COL_W);
+    expect(layout.height).toBe(2 * ROW_H + CARD_H + MARGIN * 2);
+  });
+
   it("positions a single unpaired person at the margin", () => {
     const layout = computeLayout(tree([person("a")], []));
     expect(pos(layout, "a")).toEqual({ x: MARGIN, y: MARGIN });
