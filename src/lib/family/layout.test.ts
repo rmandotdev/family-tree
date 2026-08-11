@@ -110,7 +110,7 @@ describe("computeLayout", () => {
       x: MARGIN + COL_W,
       y: MARGIN,
     });
-    expect(grid.groups[0].members).toEqual([a.id, b.id]);
+    expect(grid.groups[0]?.members).toEqual([a.id, b.id]);
     expect(layout.width).toBe(CARD_W * 2 + CARD_GAP + MARGIN * 2);
     expect(layout.height).toBe(CARD_H + MARGIN * 2);
   });
