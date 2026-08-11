@@ -1,5 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
-import { parentsOf } from "./util";
+import { closure, parentsOf } from "./util";
 
 export type DisplayMode = "all" | "direct" | "directAndChildren";
 
@@ -9,33 +9,6 @@ export interface SubtreeOptions {
 }
 
 const DEFAULT_MAX_DEPTH = 10;
-
-function upClosure(ids: string[], parents: Map<string, string[]>): Set<string> {
-  const result = new Set<string>();
-  const queue = [...ids];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(parents.get(id) ?? []));
-  }
-  return result;
-}
-
-function downClosure(
-  ids: string[],
-  children: Map<string, string[]>,
-): Set<string> {
-  const result = new Set<string>();
-  const queue = [...ids];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(children.get(id) ?? []));
-  }
-  return result;
-}
 
 export function computeSubtree(
   data: TreeData,
@@ -161,8 +134,8 @@ export function computeSubtree(
       }
     }
 
-    const ancestorsOf = upClosure(parents.get(focalId) ?? [], parents);
-    const descendantsOf = downClosure([focalId], children);
+    const ancestorsOf = closure(parents.get(focalId) ?? [], parents);
+    const descendantsOf = closure([focalId], children);
 
     const siblingsSet = new Set<string>();
     for (const pid of parents.get(focalId) ?? []) {
