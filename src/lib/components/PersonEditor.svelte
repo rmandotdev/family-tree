@@ -11,7 +11,7 @@ let {
   person: Person | null;
   onClose: () => void;
   preset?: {
-    spouseId?: string;
+    partnerId?: string;
     motherId?: string;
     fatherId?: string;
     gender?: Gender;
@@ -48,8 +48,8 @@ let fatherId = $state(
     ? (tree.families[person.parentFamilyId]?.husbandId ?? "")
     : (preset?.fatherId ?? ""),
 );
-let spouseId = $state(
-  person ? (tree.spouseOf(person.id) ?? "") : (preset?.spouseId ?? ""),
+let partnerId = $state(
+  person ? (tree.partnerOf(person.id) ?? "") : (preset?.partnerId ?? ""),
 );
 let error = $state("");
 
@@ -65,12 +65,12 @@ const fatherOptions = $derived(
   ),
 );
 
-const spouseOptions = $derived(
+const partnerOptions = $derived(
   tree.list.filter(
     (p) =>
       p.id !== person?.id &&
-      tree.canBeSpouse(person?.id ?? null, p.id) &&
-      (tree.spouseOf(p.id) === null || tree.spouseOf(p.id) === person?.id),
+      tree.canBePartner(person?.id ?? null, p.id) &&
+      (tree.partnerOf(p.id) === null || tree.partnerOf(p.id) === person?.id),
   ),
 );
 
@@ -104,7 +104,7 @@ function save() {
   const target = person ?? tree.addPerson(input);
   if (person) tree.updatePerson(target.id, input);
   tree.setParents(target.id, motherId || undefined, fatherId || undefined);
-  tree.setSpouse(target.id, spouseId || null);
+  tree.setPartner(target.id, partnerId || null);
   onClose();
 }
 
@@ -176,13 +176,13 @@ function remove() {
 
     {#if !isAddingParent}
       <label class="block text-sm">
-        <span class="font-medium text-stone-700">Spouse</span>
+        <span class="font-medium text-stone-700">Partner</span>
         <select
           class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-          bind:value={spouseId}
+          bind:value={partnerId}
         >
           <option value="">—</option>
-          {#each spouseOptions as option (option.id)}
+          {#each partnerOptions as option (option.id)}
             <option value={option.id}>
               {option.firstName}
               {option.lastName}

@@ -92,11 +92,11 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     });
   }
 
-  function areSpouses(aId: string, bId: string): boolean {
+  function arePartners(aId: string, bId: string): boolean {
     return sharedFamilyOf(aId, bId) !== undefined;
   }
 
-  function spouseOf(personId: string): string | null {
+  function partnerOf(personId: string): string | null {
     const person = people[personId];
     if (!person) return null;
     for (const fid of person.familyIds) {
@@ -114,11 +114,11 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     if (childId === parentId) return false;
     const child = people[childId];
     if (!child) return false;
-    if (areSpouses(childId, parentId)) return false;
+    if (arePartners(childId, parentId)) return false;
     return !descendantsOf(childId).has(parentId);
   }
 
-  function canBeSpouse(aId: string | null, bId: string): boolean {
+  function canBePartner(aId: string | null, bId: string): boolean {
     if (!people[bId]) return false;
     if (aId === null) return true;
     if (aId === bId) return false;
@@ -263,12 +263,12 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     persist();
   }
 
-  function setSpouse(personId: string, spouseId: string | null) {
+  function setPartner(personId: string, partnerId: string | null) {
     const person = people[personId];
     if (!person) return;
 
-    const valid = spouseId && canBeSpouse(personId, spouseId) ? spouseId : null;
-    const current = spouseOf(personId);
+    const valid = partnerId && canBePartner(personId, partnerId) ? partnerId : null;
+    const current = partnerOf(personId);
     if (current === valid) return;
 
     if (current) {
@@ -397,10 +397,10 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     deletePerson,
     setSource,
     setParents,
-    setSpouse,
+    setPartner,
     sanitize,
     canBeParent,
-    canBeSpouse,
-    spouseOf,
+    canBePartner,
+    partnerOf,
   };
 }

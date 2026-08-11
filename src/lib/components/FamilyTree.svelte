@@ -39,7 +39,7 @@ let lastTreeId = $state(activeTree);
 let editing = $state<{ id: string | null } | null>(null);
 let addRelativeTo = $state<string | null>(null);
 let addRelativePreset = $state<{
-  spouseId?: string;
+  partnerId?: string;
   motherId?: string;
   fatherId?: string;
   gender?: Gender;
@@ -117,22 +117,22 @@ function openAddRelative(id: string, relation: RelativeRelation) {
   const person = tree.people[id];
   if (!person) return;
   let preset: typeof addRelativePreset = null;
-  if (relation === "spouse") {
-    preset = { spouseId: id, gender: oppositeGender(person.gender) };
+  if (relation === "partner") {
+    preset = { partnerId: id, gender: oppositeGender(person.gender) };
   } else if (relation === "child") {
-    const spouseId = tree.spouseOf(id);
-    const spouse = spouseId ? tree.people[spouseId] : undefined;
+    const partnerId = tree.partnerOf(id);
+    const partner = partnerId ? tree.people[partnerId] : undefined;
     const motherId =
       person.gender === "female"
         ? id
-        : spouse?.gender === "female"
-          ? spouse.id
+        : partner?.gender === "female"
+          ? partner.id
           : undefined;
     const fatherId =
       person.gender === "male"
         ? id
-        : spouse?.gender === "male"
-          ? spouse.id
+        : partner?.gender === "male"
+          ? partner.id
           : undefined;
     preset = { motherId, fatherId };
   } else if (relation === "sibling") {

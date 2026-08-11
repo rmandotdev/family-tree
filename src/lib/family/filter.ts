@@ -3,18 +3,18 @@ import type { Family, Person, TreeData } from "./types";
 interface Relations {
   parents: Map<string, string[]>;
   children: Map<string, string[]>;
-  spouses: Map<string, string[]>;
+  partners: Map<string, string[]>;
 }
 
 function relationsOf(data: TreeData): Relations {
   const { people, families } = data;
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
-  const spouses = new Map<string, string[]>();
+  const partners = new Map<string, string[]>();
   for (const p of Object.values(people)) {
     parents.set(p.id, []);
     children.set(p.id, []);
-    spouses.set(p.id, []);
+    partners.set(p.id, []);
   }
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
@@ -28,15 +28,15 @@ function relationsOf(data: TreeData): Relations {
       }
     }
     if (parentIds.length === 2) {
-      spouses.get(parentIds[0])?.push(parentIds[1]);
-      spouses.get(parentIds[1])?.push(parentIds[0]);
+      partners.get(parentIds[0])?.push(parentIds[1]);
+      partners.get(parentIds[1])?.push(parentIds[0]);
     }
   }
-  return { parents, children, spouses };
+  return { parents, children, partners };
 }
 
 function descendantCone(data: TreeData, focalId: string): Set<string> {
-  const { children, spouses } = relationsOf(data);
+  const { children, partners } = relationsOf(data);
   const result = new Set<string>();
   const queue = [focalId];
   while (queue.length > 0) {
@@ -49,7 +49,7 @@ function descendantCone(data: TreeData, focalId: string): Set<string> {
     }
   }
   for (const id of [...result]) {
-    for (const sid of spouses.get(id) ?? []) result.add(sid);
+    for (const sid of partners.get(id) ?? []) result.add(sid);
   }
   return result;
 }
@@ -91,18 +91,18 @@ export function branchActions(
   data: TreeData,
   focalId: string,
 ): Map<string, BranchActions> {
-  const { parents, children, spouses } = relationsOf(data);
+  const { parents, children, partners } = relationsOf(data);
   const upCone = upClosure(parents.get(focalId) ?? [], parents);
-  const partners = new Set(spouses.get(focalId) ?? []);
+  const povPartners = new Set(partners.get(focalId) ?? []);
   const result = new Map<string, BranchActions>();
   for (const id of Object.keys(data.people)) {
     result.set(id, {
       canCollapseParents:
         (parents.get(id)?.length ?? 0) > 0 &&
-        (id === focalId || upCone.has(id) || partners.has(id)),
+        (id === focalId || upCone.has(id) || povPartners.has(id)),
       canCollapseChildren:
         (children.get(id)?.length ?? 0) > 0 && !upCone.has(id),
-      parentsHiddenByDefault: partners.has(id),
+      parentsHiddenByDefault: povPartners.has(id),
     });
   }
   return result;
@@ -130,7 +130,7 @@ export function filterCollapsed(
   }
 
   const { people, families } = fullData;
-  const { parents, children, spouses } = relationsOf(fullData);
+  const { parents, children, partners } = relationsOf(fullData);
 
   const focalId = options.focalId ?? null;
   const focalAncestors =
@@ -148,7 +148,7 @@ export function filterCollapsed(
 
   function pruneDescendants(id: string) {
     for (const cid of children.get(id) ?? []) {
-      if (cid === focalId || (focalId && spouses.get(focalId)?.includes(cid))) {
+      if (cid === focalId || (focalId && partners.get(focalId)?.includes(cid))) {
         continue;
       }
       if (pruned.has(cid)) continue;
@@ -182,7 +182,7 @@ export function filterCollapsed(
       for (const desc of downClosure([anc], children)) result.add(desc);
     }
     for (const member of [...result]) {
-      for (const sid of spouses.get(member) ?? []) result.add(sid);
+      for (const sid of partners.get(member) ?? []) result.add(sid);
     }
     return result;
   }

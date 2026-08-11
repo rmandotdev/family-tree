@@ -5,7 +5,7 @@ import Modal from "./ui/Modal.svelte";
 
 export type RelativeRelation =
   | "child"
-  | "spouse"
+  | "partner"
   | "sibling"
   | "mother"
   | "father";
@@ -27,9 +27,9 @@ const family = $derived(
 const fullName = $derived(`${person.firstName} ${person.lastName}`.trim());
 
 const options = $derived(
-  [
+  ([
     { relation: "child", label: "Child", available: true },
-    { relation: "spouse", label: "Spouse", available: true },
+    { relation: "partner", label: "Partner", available: true },
     { relation: "sibling", label: "Sibling", available: true },
     {
       relation: "mother",
@@ -41,7 +41,7 @@ const options = $derived(
       label: "Father",
       available: family?.husbandId === undefined,
     },
-  ].filter((option) => option.available),
+  ] as const).filter((option) => option.available),
 );
 </script>
 

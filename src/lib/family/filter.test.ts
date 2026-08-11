@@ -350,7 +350,7 @@ describe("filterCollapsed", () => {
     expect(out.families).toHaveProperty("f5");
   });
 
-  it("does not hide the POV's spouse and descendants when collapsing a parent-in-law's children branch", () => {
+  it("does not hide the POV's partner and descendants when collapsing a parent-in-law's children branch", () => {
     const t = demoTree();
     const subtree = computeSubtree(t, "david");
     const out = filterCollapsed(subtree, t, new Set(["john"]), new Set(), {

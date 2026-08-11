@@ -72,12 +72,12 @@ export function computeSubtree(
 
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
-  const spouses = new Map<string, string[]>();
+  const partners = new Map<string, string[]>();
 
   for (const p of Object.values(people)) {
     parents.set(p.id, []);
     children.set(p.id, []);
-    spouses.set(p.id, []);
+    partners.set(p.id, []);
   }
 
   for (const fam of Object.values(families)) {
@@ -92,8 +92,8 @@ export function computeSubtree(
       }
     }
     if (parentIds.length === 2) {
-      spouses.get(parentIds[0])?.push(parentIds[1]);
-      spouses.get(parentIds[1])?.push(parentIds[0]);
+      partners.get(parentIds[0])?.push(parentIds[1]);
+      partners.get(parentIds[1])?.push(parentIds[0]);
     }
   }
 
@@ -146,7 +146,7 @@ export function computeSubtree(
       }
     }
     for (const id of [...included]) {
-      for (const sid of spouses.get(id) ?? []) included.add(sid);
+      for (const sid of partners.get(id) ?? []) included.add(sid);
     }
   } else {
     const descendants = [focalId];
@@ -191,7 +191,7 @@ export function computeSubtree(
       ...descendantsOf,
     ]);
     for (const id of directLine) {
-      for (const sid of spouses.get(id) ?? []) included.add(sid);
+      for (const sid of partners.get(id) ?? []) included.add(sid);
     }
   }
 

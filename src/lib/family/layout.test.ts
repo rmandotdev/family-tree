@@ -17,8 +17,8 @@ function person(id: string, gender: Gender = "unknown"): Person {
 
 function family(
   id: string,
-  husband: string,
-  wife: string | undefined,
+  husband?: string,
+  wife?: string,
   children: string[] = [],
 ): Family {
   return { id, husbandId: husband, wifeId: wife, childrenIds: children };
@@ -296,7 +296,7 @@ describe("computeLayout", () => {
     expect(pos(layout, m1.id).x).toBeGreaterThan(pos(layout, f1.id).x);
   });
 
-  it("aligns a person's parents correctly when their spouse's family branch pushes them deeper", () => {
+  it("aligns a person's parents correctly when their partner's family branch pushes them deeper", () => {
     const g1 = person("g1", "male");
     const gm1 = person("gm1", "female");
     const p1 = person("p1", "male");

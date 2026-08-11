@@ -9,7 +9,7 @@ import {
   COL_W,
   ROW_H,
 } from "./layout";
-import { childSegments, connectionSegments, spouseSegments } from "./lines";
+import { childSegments, connectionSegments, partnerSegments } from "./lines";
 
 function positions(entries: Array<[string, Point]>): Map<string, Point> {
   return new Map(entries);
@@ -19,14 +19,14 @@ function couple(parents: string[], children: string[]): CoupleLayout {
   return { parents, col: 0, row: 0, children };
 }
 
-describe("spouseSegments", () => {
-  it("draws a line between the centers of both spouses", () => {
+describe("partnerSegments", () => {
+  it("draws a line between the centers of both partners", () => {
     const map = positions([
       ["a", { x: 0, y: 0 }],
       ["b", { x: COL_W, y: 0 }],
     ]);
 
-    expect(spouseSegments(map, [couple(["a", "b"], [])])).toEqual([
+    expect(partnerSegments(map, [couple(["a", "b"], [])])).toEqual([
       `M ${CARD_W / 2} ${CARD_H / 2} L ${COL_W + CARD_W / 2} ${CARD_H / 2}`,
     ]);
   });
@@ -34,7 +34,7 @@ describe("spouseSegments", () => {
   it("skips couples with a missing position", () => {
     const map = positions([["a", { x: 0, y: 0 }]]);
 
-    expect(spouseSegments(map, [couple(["a", "b"], [])])).toEqual([]);
+    expect(partnerSegments(map, [couple(["a", "b"], [])])).toEqual([]);
   });
 });
 
@@ -137,7 +137,7 @@ describe("childSegments", () => {
 });
 
 describe("connectionSegments", () => {
-  it("emits spouse segments before child segments", () => {
+  it("emits partner segments before child segments", () => {
     const map = positions([
       ["a", { x: 0, y: 0 }],
       ["b", { x: COL_W, y: 0 }],
@@ -147,7 +147,7 @@ describe("connectionSegments", () => {
 
     const segments = connectionSegments(map, couples);
     expect(segments).toEqual([
-      ...spouseSegments(map, couples),
+      ...partnerSegments(map, couples),
       ...childSegments(map, couples),
     ]);
   });

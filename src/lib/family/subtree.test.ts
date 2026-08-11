@@ -42,7 +42,7 @@ describe("computeSubtree", () => {
     expect(sub.families).toEqual({});
   });
 
-  it("includes ancestors, descendants, siblings, and spouses but not the in-law's parents", () => {
+  it("includes ancestors, descendants, siblings, and partners but not the in-law's parents", () => {
     const a = person("a");
     const b = person("b");
     const c = person("c");
@@ -71,7 +71,7 @@ describe("computeSubtree", () => {
     expect(sub.families).not.toHaveProperty("f4");
   });
 
-  it("does not include the spouse's parents or siblings", () => {
+  it("does not include the partner's parents or siblings", () => {
     const adam = person("adam");
     const eve = person("eve");
     const john = person("john");
@@ -168,7 +168,7 @@ describe("computeSubtree", () => {
     expect(sub.families).not.toHaveProperty("f4");
   });
 
-  it("does not include the spouse's children from another relationship", () => {
+  it("does not include the partner's children from another relationship", () => {
     const m = person("m");
     const n = person("n");
     const o = person("o");

@@ -6,7 +6,7 @@ function center(id: string, positions: Map<string, Point>): Point | null {
   return p ? { x: p.x + CARD_W / 2, y: p.y + CARD_H / 2 } : null;
 }
 
-export function spouseSegments(
+export function partnerSegments(
   positions: Map<string, Point>,
   couples: CoupleLayout[],
 ): string[] {
@@ -81,7 +81,7 @@ export function connectionSegments(
   couples: CoupleLayout[],
 ): string[] {
   return [
-    ...spouseSegments(positions, couples),
+    ...partnerSegments(positions, couples),
     ...childSegments(positions, couples),
   ];
 }
