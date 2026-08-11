@@ -14,6 +14,8 @@ export interface TreeStorage {
   loadData(id: string): TreeDataWithSource | null;
   saveData(id: string, data: TreeDataWithSource): void;
   deleteData(id: string): void;
+  loadActiveId(): string | null;
+  saveActiveId(id: string): void;
 }
 
 export function createTreeManager(
@@ -55,6 +57,7 @@ export function createTreeManager(
   function switchTree(id: string) {
     if (id === activeTreeId.value) return;
     activeTreeId.value = id;
+    storage.saveActiveId(id);
     swapData(loadData(id));
   }
 
@@ -63,6 +66,7 @@ export function createTreeManager(
     metas.push({ id, name, createdAt: Date.now() });
     storage.saveIndex(metas);
     activeTreeId.value = id;
+    storage.saveActiveId(id);
     swapData({ people: {}, families: {}, sourceId: null });
     return id;
   }
@@ -82,13 +86,10 @@ export function createTreeManager(
     storage.saveIndex(metas);
     storage.deleteData(id);
     if (activeTreeId.value === id) {
-      const next = metas[0]?.id ?? null;
+      const next = metas[0].id;
       activeTreeId.value = next;
-      swapData(
-        next === null
-          ? { people: {}, families: {}, sourceId: null }
-          : loadData(next),
-      );
+      storage.saveActiveId(next);
+      swapData(loadData(next));
     }
   }
 
@@ -96,7 +97,13 @@ export function createTreeManager(
     const index = storage.loadIndex();
     if (index && index.length > 0) {
       metas.push(...index);
-      activeTreeId.value = index[0].id;
+      const saved = storage.loadActiveId();
+      const active =
+        saved !== null && index.some((t) => t.id === saved)
+          ? saved
+          : index[0].id;
+      activeTreeId.value = active;
+      storage.saveActiveId(active);
     } else {
       const id = crypto.randomUUID();
       const demo = createDemoTree();
@@ -104,6 +111,7 @@ export function createTreeManager(
       storage.saveData(id, demo);
       storage.saveIndex(metas);
       activeTreeId.value = id;
+      storage.saveActiveId(id);
     }
     const activeId = activeTreeId.value;
     if (activeId !== null) swapData(loadData(activeId));

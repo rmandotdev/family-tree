@@ -1,6 +1,7 @@
 import type { TreeDataWithSource, TreeMeta } from "./types";
 
 const INDEX_KEY = "family-tree:v1:index";
+const ACTIVE_KEY = "family-tree:v1:active";
 const DATA_PREFIX = "family-tree:v1:tree:";
 
 export function loadTreeIndex(): TreeMeta[] | null {
@@ -46,6 +47,22 @@ export function saveTreeData(id: string, data: TreeDataWithSource): void {
 export function deleteTreeData(id: string): void {
   try {
     localStorage.removeItem(`${DATA_PREFIX}${id}`);
+  } catch {
+    // storage unavailable, ignore
+  }
+}
+
+export function loadActiveTreeId(): string | null {
+  try {
+    return localStorage.getItem(ACTIVE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveActiveTreeId(id: string): void {
+  try {
+    localStorage.setItem(ACTIVE_KEY, id);
   } catch {
     // storage unavailable, ignore
   }

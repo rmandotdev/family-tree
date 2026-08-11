@@ -1,8 +1,10 @@
 import { browser } from "$app/environment";
 import {
   deleteTreeData,
+  loadActiveTreeId,
   loadTreeData,
   loadTreeIndex,
+  saveActiveTreeId,
   saveTreeData,
   saveTreeIndex,
 } from "./persistence";
@@ -22,6 +24,8 @@ export const manager = createTreeManager(state, {
   loadData: loadTreeData,
   saveData: saveTreeData,
   deleteData: deleteTreeData,
+  loadActiveId: loadActiveTreeId,
+  saveActiveId: saveActiveTreeId,
 });
 
 export const tree = createFamilyTree(state.data, () => {

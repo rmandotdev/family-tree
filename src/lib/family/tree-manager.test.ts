@@ -13,15 +13,20 @@ function makeState(): TreeManagerState {
 
 interface MemoryStorage extends TreeStorage {
   index: TreeMeta[] | null;
+  activeId: string | null;
   data: Map<string, TreeDataWithSource>;
 }
 
 function makeStorage(): MemoryStorage {
   let index: TreeMeta[] | null = null;
+  let activeId: string | null = null;
   const data = new Map<string, TreeDataWithSource>();
   return {
     get index() {
       return index;
+    },
+    get activeId() {
+      return activeId;
     },
     data,
     loadIndex: () => (index === null ? null : structuredClone(index)),
@@ -34,6 +39,10 @@ function makeStorage(): MemoryStorage {
     },
     saveData: (id, tree) => data.set(id, structuredClone(tree)),
     deleteData: (id) => data.delete(id),
+    loadActiveId: () => activeId,
+    saveActiveId: (id) => {
+      activeId = id;
+    },
   };
 }
 
@@ -216,6 +225,46 @@ describe("createTreeManager", () => {
 
     expect(manager.activeTreeId).toBe(id);
     expect(Object.keys(state.data.people)).toHaveLength(0);
+  });
+
+  it("persists the active tree id when switching", () => {
+    const storage = makeStorage();
+    const manager = createTreeManager(makeState(), storage);
+    const a = manager.createTree("A");
+    const b = manager.createTree("B");
+    expect(storage.activeId).toBe(b);
+
+    manager.switchTree(a);
+
+    expect(storage.activeId).toBe(a);
+  });
+
+  it("restores the last active tree on init", () => {
+    const storage = makeStorage();
+    const manager = createTreeManager(makeState(), storage);
+    manager.init();
+    const secondId = manager.createTree("Second");
+
+    const reloaded = createTreeManager(makeState(), storage);
+    reloaded.init();
+
+    expect(reloaded.activeTreeId).toBe(secondId);
+  });
+
+  it("falls back to the first tree when the saved active id is stale", () => {
+    const storage = makeStorage();
+    seedTree(
+      storage,
+      { id: "t1", name: "First", createdAt: 1 },
+      { p1: person("p1", "Alice", "female") },
+      "p1",
+    );
+    storage.saveActiveId("ghost");
+
+    const manager = createTreeManager(makeState(), storage);
+    manager.init();
+
+    expect(manager.activeTreeId).toBe("t1");
   });
 
   it("persists the current data of the active tree", () => {
