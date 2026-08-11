@@ -12,27 +12,7 @@ import {
   MARGIN,
   ROW_H,
 } from "./layout";
-import type { Family, Gender, Person, TreeData } from "./types";
-
-function person(id: string, gender: Gender = "unknown"): Person {
-  return { id, firstName: id, lastName: "", gender, familyIds: [] };
-}
-
-function family(
-  id: string,
-  husband?: string,
-  wife?: string,
-  children: string[] = [],
-): Family {
-  return { id, husbandId: husband, wifeId: wife, childrenIds: children };
-}
-
-function tree(people: Person[], families: Family[]): TreeData {
-  return {
-    people: Object.fromEntries(people.map((p) => [p.id, p])),
-    families: Object.fromEntries(families.map((f) => [f.id, f])),
-  };
-}
+import { family, person, tree } from "./test-helpers";
 
 function pos(layout: { positions: Map<string, Point> }, id: string): Point {
   const p = layout.positions.get(id);
