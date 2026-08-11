@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { computeSubtree } from "./subtree";
+import { computeSubtree } from "../subtree";
 import { demoTree, family, ids, person, tree } from "./test-helpers";
 
 describe("computeSubtree", () => {

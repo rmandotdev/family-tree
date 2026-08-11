@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { branchActions, filterCollapsed } from "./filter";
-import { computeSubtree } from "./subtree";
+import { branchActions, filterCollapsed } from "../filter";
+import { computeSubtree } from "../subtree";
 import { demoTree, ids } from "./test-helpers";
 
 describe("filterCollapsed", () => {

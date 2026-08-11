@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { CardGrid, GridLayout, Point } from "./layout";
+import type { CardGrid, GridLayout, Point } from "../layout";
 import {
   BUS_OFFSET,
   CARD_GAP,
@@ -11,7 +11,7 @@ import {
   gridPositions,
   MARGIN,
   ROW_H,
-} from "./layout";
+} from "../layout";
 import { family, person, tree } from "./test-helpers";
 
 function pos(layout: { positions: Map<string, Point> }, id: string): Point {

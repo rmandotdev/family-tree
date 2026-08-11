@@ -1,4 +1,4 @@
-import type { Family, Gender, Person, TreeData } from "./types";
+import type { Family, Gender, Person, TreeData } from "../types";
 
 export function person(id: string, gender: Gender = "unknown"): Person {
   return { id, firstName: id, lastName: "", gender, familyIds: [] };
