@@ -6,6 +6,25 @@ function center(id: string, positions: Map<string, Point>): Point | null {
   return p ? { x: p.x + CARD_W / 2, y: p.y + CARD_H / 2 } : null;
 }
 
+interface BusAllocator {
+  alloc(x1: number, x2: number, baseY: number): number;
+}
+
+function createBusAllocator(): BusAllocator {
+  const buses: Array<[number, number, number]> = [];
+  function overlaps(y: number, x1: number, x2: number): boolean {
+    return buses.some(([by, bx1, bx2]) => by === y && x1 < bx2 && x2 > bx1);
+  }
+  return {
+    alloc(x1, x2, baseY) {
+      let y = baseY;
+      while (overlaps(y, x1, x2)) y -= BUS_STEP;
+      buses.push([y, x1, x2]);
+      return y;
+    },
+  };
+}
+
 export function partnerSegments(
   positions: Map<string, Point>,
   couples: CoupleLayout[],
@@ -24,21 +43,9 @@ export function partnerSegments(
 export function childSegments(
   positions: Map<string, Point>,
   couples: CoupleLayout[],
+  buses: BusAllocator = createBusAllocator(),
 ): string[] {
   const out: string[] = [];
-  const buses: Array<[number, number, number]> = [];
-
-  function overlaps(y: number, x1: number, x2: number): boolean {
-    return buses.some(([by, bx1, bx2]) => by === y && x1 < bx2 && x2 > bx1);
-  }
-
-  function busYFor(x1: number, x2: number, baseY: number): number {
-    let y = baseY;
-    while (overlaps(y, x1, x2)) y -= BUS_STEP;
-    buses.push([y, x1, x2]);
-    return y;
-  }
-
   for (const couple of couples) {
     if (couple.children.length === 0) continue;
     const tops = couple.children
@@ -66,8 +73,33 @@ export function childSegments(
 
     const minX = Math.min(midX, ...xs);
     const maxX = Math.max(midX, ...xs);
-    const busY = busYFor(minX, maxX, baseY);
+    const busY = buses.alloc(minX, maxX, baseY);
     out.push(`M ${midX} ${botY} V ${busY}`);
+    out.push(`M ${minX} ${busY} H ${maxX}`);
+    for (const x of xs) {
+      out.push(`M ${x} ${busY} V ${topY}`);
+    }
+  }
+  return out;
+}
+
+export function siblingSegments(
+  positions: Map<string, Point>,
+  siblingGroups: Array<string[]>,
+  buses: BusAllocator = createBusAllocator(),
+): string[] {
+  const out: string[] = [];
+  for (const group of siblingGroups) {
+    const tops = group
+      .map((id) => positions.get(id))
+      .filter((p) => p !== undefined);
+    if (tops.length < 2) continue;
+    const xs = tops.map((p) => p.x + CARD_W / 2);
+    const topY = tops[0].y;
+    const baseY = topY - BUS_OFFSET;
+    const minX = Math.min(...xs);
+    const maxX = Math.max(...xs);
+    const busY = buses.alloc(minX, maxX, baseY);
     out.push(`M ${minX} ${busY} H ${maxX}`);
     for (const x of xs) {
       out.push(`M ${x} ${busY} V ${topY}`);
@@ -79,9 +111,12 @@ export function childSegments(
 export function connectionSegments(
   positions: Map<string, Point>,
   couples: CoupleLayout[],
+  siblingGroups: Array<string[]> = [],
 ): string[] {
+  const buses = createBusAllocator();
   return [
     ...partnerSegments(positions, couples),
-    ...childSegments(positions, couples),
+    ...childSegments(positions, couples, buses),
+    ...siblingSegments(positions, siblingGroups, buses),
   ];
 }

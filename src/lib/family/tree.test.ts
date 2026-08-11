@@ -127,6 +127,68 @@ describe("createFamilyTree", () => {
     expect(state.people[mother.id].familyIds).toContain(fams[0].id);
   });
 
+  it("links a sibling to a parentless person through a shared family", () => {
+    const state = makeState();
+    const tree = createFamilyTree(state, () => {});
+    const alice = tree.addPerson(input("Alice", "female"));
+
+    const bob = tree.addSibling(alice.id, input("Bob", "male"));
+
+    const fams = Object.values(state.families);
+    expect(fams).toHaveLength(1);
+    expect(fams[0].husbandId).toBeUndefined();
+    expect(fams[0].wifeId).toBeUndefined();
+    expect(fams[0].childrenIds).toEqual([alice.id, bob.id]);
+    expect(state.people[alice.id].parentFamilyId).toBe(fams[0].id);
+    expect(state.people[bob.id].parentFamilyId).toBe(fams[0].id);
+  });
+
+  it("adds a sibling to the existing parent family when the person has parents", () => {
+    const state = makeState();
+    const tree = createFamilyTree(state, () => {});
+    const alice = tree.addPerson(input("Alice", "female"));
+    const father = tree.addPerson(input("Father", "male"));
+    tree.setParents(alice.id, undefined, father.id);
+    const parentFamId = expectId(state.people[alice.id].parentFamilyId);
+
+    const bob = tree.addSibling(alice.id, input("Bob", "male"));
+
+    const fams = Object.values(state.families);
+    expect(fams).toHaveLength(1);
+    expect(state.families[parentFamId].childrenIds).toEqual([alice.id, bob.id]);
+  });
+
+  it("wires both siblings to a parent added after the fact", () => {
+    const state = makeState();
+    const tree = createFamilyTree(state, () => {});
+    const alice = tree.addPerson(input("Alice", "female"));
+    const bob = tree.addSibling(alice.id, input("Bob", "male"));
+    const father = tree.addPerson(input("Father", "male"));
+
+    tree.setParents(alice.id, undefined, father.id);
+
+    const fams = Object.values(state.families);
+    expect(fams).toHaveLength(1);
+    expect(fams[0].husbandId).toBe(father.id);
+    expect(fams[0].wifeId).toBeUndefined();
+    expect(fams[0].childrenIds).toEqual([alice.id, bob.id]);
+    expect(state.people[bob.id].parentFamilyId).toBe(fams[0].id);
+  });
+
+  it("keeps the remaining sibling when one sibling is deleted", () => {
+    const state = makeState();
+    const tree = createFamilyTree(state, () => {});
+    const alice = tree.addPerson(input("Alice", "female"));
+    const bob = tree.addSibling(alice.id, input("Bob", "male"));
+    const famId = expectId(state.people[bob.id].parentFamilyId);
+
+    tree.deletePerson(bob.id);
+
+    expect(state.families[famId]).toBeDefined();
+    expect(state.families[famId].childrenIds).toEqual([alice.id]);
+    expect(state.people[alice.id].parentFamilyId).toBe(famId);
+  });
+
   it("makes the first added person the tree source when the tree is empty", () => {
     const state = makeState();
     const tree = createFamilyTree(state, () => {});

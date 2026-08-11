@@ -27,21 +27,23 @@ const family = $derived(
 const fullName = $derived(`${person.firstName} ${person.lastName}`.trim());
 
 const options = $derived(
-  ([
-    { relation: "child", label: "Child", available: true },
-    { relation: "partner", label: "Partner", available: true },
-    { relation: "sibling", label: "Sibling", available: true },
-    {
-      relation: "mother",
-      label: "Mother",
-      available: family?.wifeId === undefined,
-    },
-    {
-      relation: "father",
-      label: "Father",
-      available: family?.husbandId === undefined,
-    },
-  ] as const).filter((option) => option.available),
+  (
+    [
+      { relation: "child", label: "Child", available: true },
+      { relation: "partner", label: "Partner", available: true },
+      { relation: "sibling", label: "Sibling", available: true },
+      {
+        relation: "mother",
+        label: "Mother",
+        available: family?.wifeId === undefined,
+      },
+      {
+        relation: "father",
+        label: "Father",
+        available: family?.husbandId === undefined,
+      },
+    ] as const
+  ).filter((option) => option.available),
 );
 </script>
 

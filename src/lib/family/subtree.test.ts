@@ -333,6 +333,68 @@ describe("computeSubtree", () => {
     );
   });
 
+  it("includes siblings from a family with no parents", () => {
+    const alice = person("alice");
+    const bob = person("bob");
+    const t = tree(
+      [alice, bob],
+      [family("f1", undefined, undefined, [alice.id, bob.id])],
+    );
+
+    const sub = computeSubtree(t, alice.id);
+
+    expect(ids(sub)).toEqual([alice.id, bob.id].sort());
+    expect(sub.families).toHaveProperty("f1");
+  });
+
+  it("includes the children of siblings from a parentless family in all mode", () => {
+    const alice = person("alice");
+    const bob = person("bob");
+    const dan = person("dan");
+    const t = tree(
+      [alice, bob, dan],
+      [
+        family("f1", undefined, undefined, [alice.id, bob.id]),
+        family("f2", bob.id, undefined, [dan.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, alice.id);
+
+    expect(ids(sub)).toEqual([alice.id, bob.id, dan.id].sort());
+  });
+
+  it("includes a parentless sibling in direct mode", () => {
+    const alice = person("alice");
+    const bob = person("bob");
+    const t = tree(
+      [alice, bob],
+      [family("f1", undefined, undefined, [alice.id, bob.id])],
+    );
+
+    const sub = computeSubtree(t, alice.id, { mode: "direct" });
+
+    expect(ids(sub)).toEqual([alice.id, bob.id].sort());
+    expect(sub.families).toHaveProperty("f1");
+  });
+
+  it("directAndChildren mode adds the parentless siblings' children", () => {
+    const alice = person("alice");
+    const bob = person("bob");
+    const dan = person("dan");
+    const t = tree(
+      [alice, bob, dan],
+      [
+        family("f1", undefined, undefined, [alice.id, bob.id]),
+        family("f2", bob.id, undefined, [dan.id]),
+      ],
+    );
+
+    const sub = computeSubtree(t, alice.id, { mode: "directAndChildren" });
+
+    expect(ids(sub)).toEqual([alice.id, bob.id, dan.id].sort());
+  });
+
   it("sorts children in families so female children of direct ancestors are first and male children of direct ancestors are last", () => {
     const grandpaP = person("grandpaP", "male");
     const grandmaP = person("grandmaP", "female");

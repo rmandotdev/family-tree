@@ -44,6 +44,7 @@ let addRelativePreset = $state<{
   fatherId?: string;
   gender?: Gender;
   parentOf?: string;
+  siblingOf?: string;
 } | null>(null);
 
 const fullData = $derived({ people: tree.people, families: tree.families });
@@ -60,6 +61,12 @@ const viewData = $derived(
 );
 const actions = $derived(branchActions(fullData, pov.focalId));
 const layout = $derived(computeLayout(viewData));
+const siblingGroups = $derived(
+  Object.values(viewData.families)
+    .filter((f) => f.husbandId === undefined && f.wifeId === undefined)
+    .map((f) => f.childrenIds.filter((id) => viewData.people[id] !== undefined))
+    .filter((group) => group.length > 1),
+);
 const visibleList = $derived(Object.values(viewData.people));
 const focal = $derived(tree.people[pov.focalId] ?? null);
 const onSource = $derived(pov.focalId === tree.sourceId);
@@ -136,10 +143,7 @@ function openAddRelative(id: string, relation: RelativeRelation) {
           : undefined;
     preset = { motherId, fatherId };
   } else if (relation === "sibling") {
-    const fam = person.parentFamilyId
-      ? tree.families[person.parentFamilyId]
-      : undefined;
-    preset = { motherId: fam?.wifeId, fatherId: fam?.husbandId };
+    preset = { siblingOf: id };
   } else {
     preset = {
       parentOf: id,
@@ -260,6 +264,7 @@ function goBack() {
         <ConnectionLines
           positions={layout.positions}
           couples={layout.couples}
+          {siblingGroups}
         />
       </svg>
 

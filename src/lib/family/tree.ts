@@ -21,6 +21,27 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     return person;
   }
 
+  function addSibling(childId: string, input: PersonInput): Person {
+    const child = people[childId];
+    if (!child) return addPerson(input);
+    const sibling = addPerson(input);
+    let fam = child.parentFamilyId ? families[child.parentFamilyId] : undefined;
+    if (!fam) {
+      fam = {
+        id: crypto.randomUUID(),
+        husbandId: undefined,
+        wifeId: undefined,
+        childrenIds: [childId],
+      };
+      families[fam.id] = fam;
+      child.parentFamilyId = fam.id;
+    }
+    if (!fam.childrenIds.includes(sibling.id)) fam.childrenIds.push(sibling.id);
+    sibling.parentFamilyId = fam.id;
+    persist();
+    return sibling;
+  }
+
   function updatePerson(id: string, input: PersonInput) {
     const person = people[id];
     if (!person) return;
@@ -148,10 +169,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     const fam = families[familyId];
     if (!fam) return;
     if (fam.husbandId !== undefined || fam.wifeId !== undefined) return;
-    for (const childId of fam.childrenIds) {
-      const child = people[childId];
-      if (child?.parentFamilyId === familyId) child.parentFamilyId = undefined;
-    }
+    if (fam.childrenIds.length > 0) return;
     delete families[familyId];
   }
 
@@ -219,7 +237,26 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
       return;
     }
 
-    if (current) {
+    let fam = Object.values(families).find(
+      (f) => f.husbandId === validFather && f.wifeId === validMother,
+    );
+    let reuseCurrent = false;
+    if (!fam && current) {
+      const fatherFits =
+        current.husbandId === validFather ||
+        (current.husbandId === undefined && validFather !== undefined);
+      const motherFits =
+        current.wifeId === validMother ||
+        (current.wifeId === undefined && validMother !== undefined);
+      if (fatherFits && motherFits) {
+        fam = current;
+        fam.husbandId = validFather;
+        fam.wifeId = validMother;
+        reuseCurrent = true;
+      }
+    }
+
+    if (current && !reuseCurrent) {
       current.childrenIds = current.childrenIds.filter(
         (cid) => cid !== childId,
       );
@@ -232,22 +269,6 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
       return;
     }
 
-    let fam = Object.values(families).find(
-      (f) => f.husbandId === validFather && f.wifeId === validMother,
-    );
-    if (!fam && current) {
-      const fatherFits =
-        current.husbandId === validFather ||
-        (current.husbandId === undefined && validFather !== undefined);
-      const motherFits =
-        current.wifeId === validMother ||
-        (current.wifeId === undefined && validMother !== undefined);
-      if (fatherFits && motherFits) {
-        fam = current;
-        fam.husbandId = validFather;
-        fam.wifeId = validMother;
-      }
-    }
     if (!fam) {
       fam = {
         id: crypto.randomUUID(),
@@ -267,7 +288,8 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     const person = people[personId];
     if (!person) return;
 
-    const valid = partnerId && canBePartner(personId, partnerId) ? partnerId : null;
+    const valid =
+      partnerId && canBePartner(personId, partnerId) ? partnerId : null;
     const current = partnerOf(personId);
     if (current === valid) return;
 
@@ -393,6 +415,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
       return state.sourceId.value;
     },
     addPerson,
+    addSibling,
     updatePerson,
     deletePerson,
     setSource,

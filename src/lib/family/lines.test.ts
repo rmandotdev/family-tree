@@ -9,7 +9,12 @@ import {
   COL_W,
   ROW_H,
 } from "./layout";
-import { childSegments, connectionSegments, partnerSegments } from "./lines";
+import {
+  childSegments,
+  connectionSegments,
+  partnerSegments,
+  siblingSegments,
+} from "./lines";
 
 function positions(entries: Array<[string, Point]>): Map<string, Point> {
   return new Map(entries);
@@ -133,6 +138,36 @@ describe("childSegments", () => {
     ]);
 
     expect(childSegments(map, [couple(["a", "b"], [])])).toEqual([]);
+  });
+});
+
+describe("siblingSegments", () => {
+  it("connects siblings through a bus with no vertical line to parents", () => {
+    const map = positions([
+      ["a", { x: 0, y: 0 }],
+      ["b", { x: COL_W, y: 0 }],
+    ]);
+
+    const busY = -BUS_OFFSET;
+    const minX = CARD_W / 2;
+    const maxX = COL_W + CARD_W / 2;
+    expect(siblingSegments(map, [["a", "b"]])).toEqual([
+      `M ${minX} ${busY} H ${maxX}`,
+      `M ${minX} ${busY} V 0`,
+      `M ${maxX} ${busY} V 0`,
+    ]);
+  });
+
+  it("emits nothing for a group with a single sibling", () => {
+    const map = positions([["a", { x: 0, y: 0 }]]);
+
+    expect(siblingSegments(map, [["a"]])).toEqual([]);
+  });
+
+  it("emits nothing when sibling positions are missing", () => {
+    const map = positions([["a", { x: 0, y: 0 }]]);
+
+    expect(siblingSegments(map, [["a", "b"]])).toEqual([]);
   });
 });
 

@@ -148,7 +148,10 @@ export function filterCollapsed(
 
   function pruneDescendants(id: string) {
     for (const cid of children.get(id) ?? []) {
-      if (cid === focalId || (focalId && partners.get(focalId)?.includes(cid))) {
+      if (
+        cid === focalId ||
+        (focalId && partners.get(focalId)?.includes(cid))
+      ) {
         continue;
       }
       if (pruned.has(cid)) continue;

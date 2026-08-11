@@ -5,12 +5,16 @@ import { connectionSegments } from "$lib/family/lines";
 let {
   positions,
   couples,
+  siblingGroups = [],
 }: {
   positions: Map<string, Point>;
   couples: CoupleLayout[];
+  siblingGroups?: Array<string[]>;
 } = $props();
 
-const segments = $derived(connectionSegments(positions, couples));
+const segments = $derived(
+  connectionSegments(positions, couples, siblingGroups),
+);
 </script>
 
 {#each segments as d}

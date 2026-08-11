@@ -16,10 +16,12 @@ let {
     fatherId?: string;
     gender?: Gender;
     parentOf?: string;
+    siblingOf?: string;
   } | null;
 } = $props();
 
 const isAddingParent = $derived(preset?.parentOf !== undefined);
+const isSibling = $derived(preset?.siblingOf !== undefined);
 
 const title = $derived(
   person
@@ -98,6 +100,11 @@ function save() {
     } else {
       tree.setParents(preset.parentOf, target.id, existing?.husbandId);
     }
+    onClose();
+    return;
+  }
+  if (preset?.siblingOf) {
+    tree.addSibling(preset.siblingOf, input);
     onClose();
     return;
   }
@@ -191,7 +198,7 @@ function remove() {
         </select>
       </label>
 
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 gap-3" class:hidden={isSibling}>
         <label class="block text-sm">
           <span class="font-medium text-stone-700">Mother</span>
           <select

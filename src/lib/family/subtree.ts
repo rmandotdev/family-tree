@@ -73,19 +73,21 @@ export function computeSubtree(
   const parents = new Map<string, string[]>();
   const children = new Map<string, string[]>();
   const partners = new Map<string, string[]>();
+  const siblings = new Map<string, string[]>();
 
   for (const p of Object.values(people)) {
     parents.set(p.id, []);
     children.set(p.id, []);
     partners.set(p.id, []);
+    siblings.set(p.id, []);
   }
 
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
       (id) => id !== undefined,
     );
-    for (const childId of fam.childrenIds) {
-      if (!people[childId]) continue;
+    const kids = fam.childrenIds.filter((id) => people[id] !== undefined);
+    for (const childId of kids) {
       for (const pid of parentIds) {
         parents.get(childId)?.push(pid);
         children.get(pid)?.push(childId);
@@ -94,6 +96,11 @@ export function computeSubtree(
     if (parentIds.length === 2) {
       partners.get(parentIds[0])?.push(parentIds[1]);
       partners.get(parentIds[1])?.push(parentIds[0]);
+    }
+    if (parentIds.length === 0) {
+      for (const childId of kids) {
+        siblings.get(childId)?.push(...kids.filter((id) => id !== childId));
+      }
     }
   }
 
@@ -116,6 +123,11 @@ export function computeSubtree(
       generation.set(cid, g + 1);
       queue.push(cid);
     }
+    for (const sid of siblings.get(id) ?? []) {
+      if (generation.has(sid)) continue;
+      generation.set(sid, g);
+      queue.push(sid);
+    }
   }
 
   const included = new Set<string>();
@@ -134,6 +146,18 @@ export function computeSubtree(
   }
 
   if (mode === "all") {
+    const siblingQueue = [...included];
+    while (siblingQueue.length > 0) {
+      const id = siblingQueue.pop();
+      if (id === undefined) continue;
+      for (const sid of siblings.get(id) ?? []) {
+        if (included.has(sid)) continue;
+        const sg = generation.get(sid);
+        if (sg !== undefined && (sg > maxDepth || sg < -maxDepth)) continue;
+        included.add(sid);
+        siblingQueue.push(sid);
+      }
+    }
     const descendants = [...included];
     while (descendants.length > 0) {
       const id = descendants.pop();
@@ -164,18 +188,24 @@ export function computeSubtree(
     const ancestorsOf = upClosure(parents.get(focalId) ?? [], parents);
     const descendantsOf = downClosure([focalId], children);
 
-    const siblings = new Set<string>();
+    const siblingsSet = new Set<string>();
     for (const pid of parents.get(focalId) ?? []) {
       for (const cid of children.get(pid) ?? []) {
         if (cid === focalId || included.has(cid)) continue;
         if ((generation.get(cid) ?? Infinity) > maxDepth) continue;
-        siblings.add(cid);
+        siblingsSet.add(cid);
         included.add(cid);
       }
     }
+    for (const sid of siblings.get(focalId) ?? []) {
+      if (included.has(sid)) continue;
+      if ((generation.get(sid) ?? Infinity) > maxDepth) continue;
+      siblingsSet.add(sid);
+      included.add(sid);
+    }
 
     if (mode === "directAndChildren") {
-      const seed = new Set<string>([...ancestorsOf, ...siblings]);
+      const seed = new Set<string>([...ancestorsOf, ...siblingsSet]);
       for (const s of seed) {
         for (const cid of children.get(s) ?? []) {
           if (included.has(cid)) continue;
