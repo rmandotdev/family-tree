@@ -1,41 +1,38 @@
 import { browser } from "$app/environment";
-import { createDemoTree } from "./demo";
-import { loadTree, saveTree } from "./persistence";
-import type { FamilyTreeState } from "./tree";
+import {
+  deleteTreeData,
+  loadTreeData,
+  loadTreeIndex,
+  saveTreeData,
+  saveTreeIndex,
+} from "./persistence";
 import { createFamilyTree } from "./tree";
-import type { Family, Person, TreeDataWithSource } from "./types";
+import { createTreeManager } from "./tree-manager";
+import type { Family, Person, TreeMeta } from "./types";
+
+const treeMetas = $state<TreeMeta[]>([]);
+const activeTreeId = $state<{ value: string | null }>({ value: null });
 
 const people = $state<Record<string, Person>>({});
 const families = $state<Record<string, Family>>({});
 const sourceId = $state<{ value: string | null }>({ value: null });
 
-const state: FamilyTreeState = { people, families, sourceId };
+export const manager = createTreeManager(
+  { metas: treeMetas, activeTreeId, data: { people, families, sourceId } },
+  {
+    loadIndex: loadTreeIndex,
+    saveIndex: saveTreeIndex,
+    loadData: loadTreeData,
+    saveData: saveTreeData,
+    deleteData: deleteTreeData,
+  },
+);
 
-export const tree = createFamilyTree(state, () => {
-  if (browser)
-    saveTree({
-      people: state.people,
-      families: state.families,
-      sourceId: state.sourceId.value,
-    });
+export const tree = createFamilyTree({ people, families, sourceId }, () => {
+  if (browser) manager.persist();
 });
 
-function resolveSourceId(data: TreeDataWithSource): string | null {
-  if (data.sourceId && data.people[data.sourceId]) return data.sourceId;
-  return Object.keys(data.people)[0] ?? null;
-}
-
 if (browser) {
-  const saved = loadTree();
-  if (saved) {
-    Object.assign(people, saved.people);
-    Object.assign(families, saved.families);
-    sourceId.value = resolveSourceId(saved);
-    tree.sanitize();
-  } else {
-    const demo = createDemoTree();
-    Object.assign(people, demo.people);
-    Object.assign(families, demo.families);
-    sourceId.value = resolveSourceId(demo);
-  }
+  manager.init();
+  tree.sanitize();
 }

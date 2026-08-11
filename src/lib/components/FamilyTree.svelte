@@ -3,7 +3,7 @@ import { branchActions, filterCollapsed } from "$lib/family/filter";
 import { computeLayout } from "$lib/family/layout";
 import type { DisplayMode } from "$lib/family/subtree";
 import { computeSubtree } from "$lib/family/subtree";
-import { tree } from "$lib/family/tree.svelte";
+import { manager, tree } from "$lib/family/tree.svelte";
 import type { Gender } from "$lib/family/types";
 import type { RelativeRelation } from "./AddRelativeModal.svelte";
 import AddRelativeModal from "./AddRelativeModal.svelte";
@@ -13,6 +13,7 @@ import type { CardAction } from "./PersonCard.svelte";
 import PersonCard from "./PersonCard.svelte";
 import PersonEditor from "./PersonEditor.svelte";
 import { canvas } from "./pan.svelte";
+import TreeSwitcher from "./TreeSwitcher.svelte";
 
 interface PovCollapseState {
   children: Set<string>;
@@ -26,11 +27,15 @@ const emptyPovCollapse: PovCollapseState = {
   expandedParents: new Set<string>(),
 };
 
+const activeTree = $derived(manager.activeTreeId);
+
 let pov = $state<{ focalId: string }>({ focalId: tree.sourceId ?? "" });
 let mode = $state<DisplayMode>("all");
 let collapseByPov = $state<Record<string, PovCollapseState>>({});
 let openMenuId = $state<string | null>(null);
 let recenterKey = $state(0);
+// svelte-ignore state_referenced_locally (expected)
+let lastTreeId = $state(activeTree);
 let editing = $state<{ id: string | null } | null>(null);
 let addRelativeTo = $state<string | null>(null);
 let addRelativePreset = $state<{
@@ -82,6 +87,25 @@ $effect(() => {
     document.removeEventListener("pointerdown", close);
     document.removeEventListener("keydown", onKey);
   };
+});
+
+$effect(() => {
+  if (activeTree === lastTreeId) return;
+  lastTreeId = activeTree;
+  pov = { focalId: tree.sourceId ?? "" };
+  collapseByPov = {};
+  openMenuId = null;
+  editing = null;
+  addRelativeTo = null;
+  addRelativePreset = null;
+  recenterKey += 1;
+});
+
+$effect(() => {
+  if (pov.focalId === "" && tree.sourceId) {
+    pov = { focalId: tree.sourceId };
+    recenterKey += 1;
+  }
 });
 
 function openEditor(id: string | null) {
@@ -193,7 +217,9 @@ function goBack() {
   <header
     class="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-stone-200 bg-white px-4 shadow-sm"
   >
-    <div></div>
+    <div class="flex items-center">
+      <TreeSwitcher />
+    </div>
     <div
       class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
     >
@@ -258,6 +284,23 @@ function goBack() {
         {/if}
       {/each}
     </FamilyCanvas>
+
+    {#if visibleList.length === 0}
+      <div class="absolute inset-0 z-10 flex items-center justify-center">
+        <div
+          class="flex flex-col items-center gap-3 rounded-xl border border-stone-200 bg-white px-8 py-6 text-center shadow-md"
+        >
+          <p class="text-sm text-stone-500">This tree is empty.</p>
+          <button
+            class="cursor-pointer rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-700"
+            type="button"
+            onclick={() => openEditor(null)}
+          >
+            Add your first person
+          </button>
+        </div>
+      </div>
+    {/if}
   </div>
 
   {#if focal && !onSource}
