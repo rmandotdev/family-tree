@@ -1,4 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
+import { closure, parentsOf, relationsOf } from "./util";
 
 export type DisplayMode = "all" | "direct" | "directAndChildren";
 
@@ -8,33 +9,6 @@ export interface SubtreeOptions {
 }
 
 const DEFAULT_MAX_DEPTH = 10;
-
-function upClosure(ids: string[], parents: Map<string, string[]>): Set<string> {
-  const result = new Set<string>();
-  const queue = [...ids];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(parents.get(id) ?? []));
-  }
-  return result;
-}
-
-function downClosure(
-  ids: string[],
-  children: Map<string, string[]>,
-): Set<string> {
-  const result = new Set<string>();
-  const queue = [...ids];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(children.get(id) ?? []));
-  }
-  return result;
-}
 
 export function computeSubtree(
   data: TreeData,
@@ -47,37 +21,15 @@ export function computeSubtree(
 
   if (!people[focalId]) return { people: {}, families: {} };
 
-  const parents = new Map<string, string[]>();
-  const children = new Map<string, string[]>();
-  const partners = new Map<string, string[]>();
+  const { parents, children, partners } = relationsOf(data);
   const siblings = new Map<string, string[]>();
-
-  for (const p of Object.values(people)) {
-    parents.set(p.id, []);
-    children.set(p.id, []);
-    partners.set(p.id, []);
-    siblings.set(p.id, []);
-  }
-
+  for (const p of Object.values(people)) siblings.set(p.id, []);
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
+    if (parentIds.length !== 0) continue;
     const kids = fam.childrenIds.filter((id) => people[id] !== undefined);
     for (const childId of kids) {
-      for (const pid of parentIds) {
-        parents.get(childId)?.push(pid);
-        children.get(pid)?.push(childId);
-      }
-    }
-    if (parentIds.length === 2) {
-      partners.get(parentIds[0])?.push(parentIds[1]);
-      partners.get(parentIds[1])?.push(parentIds[0]);
-    }
-    if (parentIds.length === 0) {
-      for (const childId of kids) {
-        siblings.get(childId)?.push(...kids.filter((id) => id !== childId));
-      }
+      siblings.get(childId)?.push(...kids.filter((id) => id !== childId));
     }
   }
 
@@ -162,8 +114,8 @@ export function computeSubtree(
       }
     }
 
-    const ancestorsOf = upClosure(parents.get(focalId) ?? [], parents);
-    const descendantsOf = downClosure([focalId], children);
+    const ancestorsOf = closure(parents.get(focalId) ?? [], parents);
+    const descendantsOf = closure([focalId], children);
 
     const siblingsSet = new Set<string>();
     for (const pid of parents.get(focalId) ?? []) {
@@ -210,9 +162,7 @@ export function computeSubtree(
 
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     if (!parentIds.every((id) => included.has(id))) continue;
 
     outFamilies[fam.id] = fam;

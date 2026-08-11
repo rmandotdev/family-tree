@@ -95,7 +95,7 @@ describe("createTreeManager", () => {
 
     expect(manager.activeTreeId).not.toBeNull();
     expect(manager.metas).toHaveLength(1);
-    expect(manager.metas[0].name).toBe("Demo Tree");
+    expect(manager.metas[0]?.name).toBe("Demo Tree");
     expect(Object.keys(state.data.people).length).toBeGreaterThan(0);
     expect(storage.index).toHaveLength(1);
     expect(storage.data.size).toBe(1);
@@ -114,7 +114,7 @@ describe("createTreeManager", () => {
     expect(id).not.toBe(firstId);
     expect(manager.activeTreeId).toBe(id);
     expect(manager.metas).toHaveLength(2);
-    expect(manager.metas[1].name).toBe("Vacation");
+    expect(manager.metas[1]?.name).toBe("Vacation");
     expect(Object.keys(state.data.people)).toHaveLength(0);
     expect(storage.index).toHaveLength(2);
   });

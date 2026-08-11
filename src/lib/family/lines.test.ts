@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { CoupleLayout, Point } from "./layout";
+import type { GroupGrid, Point } from "./layout";
 import {
   BUS_OFFSET,
   BUS_STEP,
@@ -20,8 +20,8 @@ function positions(entries: Array<[string, Point]>): Map<string, Point> {
   return new Map(entries);
 }
 
-function couple(parents: string[], children: string[]): CoupleLayout {
-  return { parents, col: 0, row: 0, children };
+function group(members: string[], children: string[]): GroupGrid {
+  return { members, col: 0, row: 0, children };
 }
 
 describe("partnerSegments", () => {
@@ -31,7 +31,7 @@ describe("partnerSegments", () => {
       ["b", { x: COL_W, y: 0 }],
     ]);
 
-    expect(partnerSegments(map, [couple(["a", "b"], [])])).toEqual([
+    expect(partnerSegments(map, [group(["a", "b"], [])])).toEqual([
       `M ${CARD_W / 2} ${CARD_H / 2} L ${COL_W + CARD_W / 2} ${CARD_H / 2}`,
     ]);
   });
@@ -39,7 +39,7 @@ describe("partnerSegments", () => {
   it("skips couples with a missing position", () => {
     const map = positions([["a", { x: 0, y: 0 }]]);
 
-    expect(partnerSegments(map, [couple(["a", "b"], [])])).toEqual([]);
+    expect(partnerSegments(map, [group(["a", "b"], [])])).toEqual([]);
   });
 });
 
@@ -55,7 +55,7 @@ describe("childSegments", () => {
     const busY = ROW_H - BUS_OFFSET;
     const minX = CARD_W / 2;
     const maxX = COL_W + CARD_W / 2;
-    expect(childSegments(map, [couple(["a", "b"], ["c1", "c2"])])).toEqual([
+    expect(childSegments(map, [group(["a", "b"], ["c1", "c2"])])).toEqual([
       `M ${CARD_W + CARD_GAP / 2} ${CARD_H / 2} V ${busY}`,
       `M ${minX} ${busY} H ${maxX}`,
       `M ${minX} ${busY} V ${ROW_H}`,
@@ -73,7 +73,7 @@ describe("childSegments", () => {
     const busY = ROW_H - BUS_OFFSET;
     const midX = CARD_W + CARD_GAP / 2;
     const childX = CARD_W / 2;
-    expect(childSegments(map, [couple(["a", "b"], ["c"])])).toEqual([
+    expect(childSegments(map, [group(["a", "b"], ["c"])])).toEqual([
       `M ${midX} ${CARD_H / 2} V ${busY}`,
       `M ${childX} ${busY} H ${midX}`,
       `M ${childX} ${busY} V ${ROW_H}`,
@@ -87,7 +87,7 @@ describe("childSegments", () => {
     ]);
 
     const busY = ROW_H - BUS_OFFSET;
-    expect(childSegments(map, [couple(["p"], ["c"])])).toEqual([
+    expect(childSegments(map, [group(["p"], ["c"])])).toEqual([
       `M ${CARD_W / 2} ${CARD_H} V ${busY}`,
       `M ${CARD_W / 2} ${busY} H ${CARD_W / 2}`,
       `M ${CARD_W / 2} ${busY} V ${ROW_H}`,
@@ -107,8 +107,8 @@ describe("childSegments", () => {
     const busY = ROW_H - BUS_OFFSET;
     expect(
       childSegments(map, [
-        couple(["a", "b"], ["c1", "c2"]),
-        couple(["p"], ["d"]),
+        group(["a", "b"], ["c1", "c2"]),
+        group(["p"], ["d"]),
       ]),
     ).toEqual([
       `M ${CARD_W + CARD_GAP / 2} ${CARD_H / 2} V ${busY}`,
@@ -128,7 +128,7 @@ describe("childSegments", () => {
       ["c2", { x: COL_W, y: ROW_H }],
     ]);
 
-    expect(childSegments(map, [couple(["a", "b"], ["c1", "c2"])])).toEqual([]);
+    expect(childSegments(map, [group(["a", "b"], ["c1", "c2"])])).toEqual([]);
   });
 
   it("emits nothing for couples without children", () => {
@@ -137,7 +137,7 @@ describe("childSegments", () => {
       ["b", { x: COL_W, y: 0 }],
     ]);
 
-    expect(childSegments(map, [couple(["a", "b"], [])])).toEqual([]);
+    expect(childSegments(map, [group(["a", "b"], [])])).toEqual([]);
   });
 });
 
@@ -178,7 +178,7 @@ describe("connectionSegments", () => {
       ["b", { x: COL_W, y: 0 }],
       ["c", { x: 0, y: ROW_H }],
     ]);
-    const couples = [couple(["a", "b"], ["c"])];
+    const couples = [group(["a", "b"], ["c"])];
 
     const segments = connectionSegments(map, couples);
     expect(segments).toEqual([

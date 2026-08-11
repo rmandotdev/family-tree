@@ -6,6 +6,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
 
+    // TODO: enable
+    // "noUncheckedIndexedAccess": true,
+
     "strict": true,
     "moduleResolution": "bundler",
 

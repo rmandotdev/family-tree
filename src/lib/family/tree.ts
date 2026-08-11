@@ -1,4 +1,5 @@
 import type { Family, Person, PersonInput } from "./types";
+import { parentsOf } from "./util";
 
 export interface FamilyTreeState {
   people: Record<string, Person>;
@@ -55,12 +56,10 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
 
   function parentIdsOf(id: string): string[] {
     const person = people[id];
-    const fam = person?.parentFamilyId
-      ? families[person.parentFamilyId]
-      : undefined;
-    return [fam?.husbandId, fam?.wifeId].filter(
-      (parentId) => parentId !== undefined,
-    );
+    if (!person?.parentFamilyId) return [];
+    const fam = families[person.parentFamilyId];
+    if (!fam) return [];
+    return parentsOf(fam);
   }
 
   function childrenOf(id: string): string[] {
@@ -106,9 +105,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
 
   function sharedFamilyOf(aId: string, bId: string): Family | undefined {
     return Object.values(families).find((fam) => {
-      const parents = [fam.husbandId, fam.wifeId].filter(
-        (id) => id !== undefined,
-      );
+      const parents = parentsOf(fam);
       return parents.includes(aId) && parents.includes(bId);
     });
   }
@@ -150,9 +147,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
   function syncFamilyParents(familyId: string) {
     const fam = families[familyId];
     if (!fam) return;
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     for (const id of parentIds) {
       const person = people[id];
       if (person && !person.familyIds.includes(familyId))
@@ -359,9 +354,7 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
           changed = true;
         }
       }
-      const parentIds = [fam.husbandId, fam.wifeId].filter(
-        (id) => id !== undefined,
-      );
+      const parentIds = parentsOf(fam);
       const children = fam.childrenIds.filter(
         (id) => people[id] !== undefined && !parentIds.includes(id),
       );
