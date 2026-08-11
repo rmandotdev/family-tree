@@ -26,6 +26,12 @@ export interface TreeDataWithSource {
 
 export type TreeData = Omit<TreeDataWithSource, "sourceId">;
 
+export interface TreeMeta {
+  id: string;
+  name: string;
+  createdAt: number;
+}
+
 export type PersonInput = Pick<
   Person,
   "firstName" | "lastName" | "gender" | "birthDate" | "deathDate"
