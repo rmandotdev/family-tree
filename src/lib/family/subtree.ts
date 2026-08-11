@@ -36,29 +36,6 @@ function downClosure(
   return result;
 }
 
-function sortChildrenForPOV(
-  childrenIds: string[],
-  directAncestors: Set<string>,
-  people: Record<string, Person>,
-): string[] {
-  return [...childrenIds].sort((aId, bId) => {
-    const aIsAncestor = directAncestors.has(aId);
-    const bIsAncestor = directAncestors.has(bId);
-
-    const aPerson = people[aId];
-    const bPerson = people[bId];
-
-    const getPriority = (isAncestor: boolean, person?: Person) => {
-      if (!isAncestor) return 1;
-      return person?.gender === "female" ? 0 : 2;
-    };
-
-    return (
-      getPriority(aIsAncestor, aPerson) - getPriority(bIsAncestor, bPerson)
-    );
-  });
-}
-
 export function computeSubtree(
   data: TreeData,
   focalId: string,
@@ -231,9 +208,6 @@ export function computeSubtree(
     if (p) outPeople[id] = p;
   }
 
-  const directAncestors = upClosure(parents.get(focalId) ?? [], parents);
-  directAncestors.add(focalId);
-
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
     const parentIds = [fam.husbandId, fam.wifeId].filter(
@@ -241,10 +215,7 @@ export function computeSubtree(
     );
     if (!parentIds.every((id) => included.has(id))) continue;
 
-    outFamilies[fam.id] = {
-      ...fam,
-      childrenIds: sortChildrenForPOV(fam.childrenIds, directAncestors, people),
-    };
+    outFamilies[fam.id] = fam;
   }
 
   return { people: outPeople, families: outFamilies };
