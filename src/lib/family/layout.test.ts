@@ -1,12 +1,14 @@
 import { describe, expect, it } from "bun:test";
-import type { Point } from "./layout";
+import type { CardGrid, GridLayout, Point } from "./layout";
 import {
   BUS_OFFSET,
   CARD_GAP,
   CARD_H,
   CARD_W,
   COL_W,
+  computeGrid,
   computeLayout,
+  gridPositions,
   MARGIN,
   ROW_H,
 } from "./layout";
@@ -36,6 +38,12 @@ function pos(layout: { positions: Map<string, Point> }, id: string): Point {
   const p = layout.positions.get(id);
   if (!p) throw new Error(`missing position for ${id}`);
   return p;
+}
+
+function card(grid: GridLayout, id: string): CardGrid {
+  const c = grid.cards.get(id);
+  if (!c) throw new Error(`missing card for ${id}`);
+  return c;
 }
 
 describe("computeLayout", () => {
@@ -94,14 +102,15 @@ describe("computeLayout", () => {
   it("positions a childless couple side by side", () => {
     const a = person("a", "male");
     const b = person("b", "female");
-    const layout = computeLayout(tree([a, b], [family("f1", a.id, b.id)]));
+    const grid = computeGrid(tree([a, b], [family("f1", a.id, b.id)]));
+    const layout = gridPositions(grid);
 
     expect(pos(layout, a.id)).toEqual({ x: MARGIN, y: MARGIN });
     expect(pos(layout, b.id)).toEqual({
       x: MARGIN + COL_W,
       y: MARGIN,
     });
-    expect(layout.couples[0].parents).toEqual([a.id, b.id]);
+    expect(grid.groups[0].members).toEqual([a.id, b.id]);
     expect(layout.width).toBe(CARD_W * 2 + CARD_GAP + MARGIN * 2);
     expect(layout.height).toBe(CARD_H + MARGIN * 2);
   });
@@ -362,5 +371,82 @@ describe("computeLayout", () => {
 
     expect(parent1Y).toBe(child1Y - ROW_H);
     expect(sibling1Y).toBe(child1Y);
+  });
+});
+
+describe("computeGrid with a point of view", () => {
+  it("keeps the partner's siblings off the POV's side", () => {
+    const me = person("me");
+    const father = person("father", "male");
+    const mother = person("mother", "female");
+    const grandpa = person("grandpa", "male");
+    const grandma = person("grandma", "female");
+    const uncle = person("uncle", "male");
+    const aunt = person("aunt", "female");
+
+    const data = tree(
+      [me, father, mother, grandpa, grandma, uncle, aunt],
+      [
+        family("f1", father.id, mother.id, [me.id]),
+        family("f2", grandpa.id, undefined, [father.id, uncle.id]),
+        family("f3", undefined, grandma.id, [mother.id, aunt.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, father.id);
+
+    expect(card(grid, "uncle").col).toBeLessThan(card(grid, "father").col);
+    expect(card(grid, "aunt").col).toBeGreaterThan(card(grid, "mother").col);
+    expect(card(grid, "father").col + 1).toBe(card(grid, "mother").col);
+  });
+
+  it("sorts direct-ancestor siblings toward the outside of the POV's partner", () => {
+    const pov = person("pov", "female");
+    const father = person("father", "male");
+    const mother = person("mother", "female");
+    const grandpaP = person("grandpaP", "male");
+    const grandmaP = person("grandmaP", "female");
+    const grandpaM = person("grandpaM", "male");
+    const grandmaM = person("grandmaM", "female");
+    const uncleP = person("uncleP", "male");
+    const auntP = person("auntP", "male");
+    const auntM = person("auntM", "female");
+    const uncleM = person("uncleM", "female");
+
+    const data = tree(
+      [
+        pov,
+        father,
+        mother,
+        grandpaP,
+        grandmaP,
+        grandpaM,
+        grandmaM,
+        uncleP,
+        auntP,
+        auntM,
+        uncleM,
+      ],
+      [
+        family("f1", grandpaP.id, grandmaP.id, [
+          uncleP.id,
+          father.id,
+          auntP.id,
+        ]),
+        family("f2", grandpaM.id, grandmaM.id, [
+          auntM.id,
+          mother.id,
+          uncleM.id,
+        ]),
+        family("f3", father.id, mother.id, [pov.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, pov.id);
+
+    expect(card(grid, "father").col).toBeGreaterThan(card(grid, "uncleP").col);
+    expect(card(grid, "father").col).toBeGreaterThan(card(grid, "auntP").col);
+    expect(card(grid, "mother").col).toBeLessThan(card(grid, "auntM").col);
+    expect(card(grid, "mother").col).toBeLessThan(card(grid, "uncleM").col);
   });
 });

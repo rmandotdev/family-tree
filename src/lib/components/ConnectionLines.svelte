@@ -1,20 +1,18 @@
 <script lang="ts">
-import type { CoupleLayout, Point } from "$lib/family/layout";
+import type { GroupGrid, Point } from "$lib/family/layout";
 import { connectionSegments } from "$lib/family/lines";
 
 let {
   positions,
-  couples,
+  groups,
   siblingGroups = [],
 }: {
   positions: Map<string, Point>;
-  couples: CoupleLayout[];
+  groups: GroupGrid[];
   siblingGroups?: Array<string[]>;
 } = $props();
 
-const segments = $derived(
-  connectionSegments(positions, couples, siblingGroups),
-);
+const segments = $derived(connectionSegments(positions, groups, siblingGroups));
 </script>
 
 {#each segments as d}

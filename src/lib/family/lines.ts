@@ -1,4 +1,4 @@
-import type { CoupleLayout, Point } from "./layout";
+import type { GroupGrid, Point } from "./layout";
 import { BUS_OFFSET, BUS_STEP, CARD_H, CARD_W } from "./layout";
 
 function center(id: string, positions: Map<string, Point>): Point | null {
@@ -27,13 +27,13 @@ function createBusAllocator(): BusAllocator {
 
 export function partnerSegments(
   positions: Map<string, Point>,
-  couples: CoupleLayout[],
+  groups: GroupGrid[],
 ): string[] {
   const out: string[] = [];
-  for (const couple of couples) {
-    if (couple.parents.length !== 2) continue;
-    const a = center(couple.parents[0], positions);
-    const b = center(couple.parents[1], positions);
+  for (const group of groups) {
+    if (group.members.length !== 2) continue;
+    const a = center(group.members[0], positions);
+    const b = center(group.members[1], positions);
     if (!a || !b) continue;
     out.push(`M ${a.x} ${a.y} L ${b.x} ${b.y}`);
   }
@@ -42,13 +42,13 @@ export function partnerSegments(
 
 export function childSegments(
   positions: Map<string, Point>,
-  couples: CoupleLayout[],
+  groups: GroupGrid[],
   buses: BusAllocator = createBusAllocator(),
 ): string[] {
   const out: string[] = [];
-  for (const couple of couples) {
-    if (couple.children.length === 0) continue;
-    const tops = couple.children
+  for (const group of groups) {
+    if (group.children.length === 0) continue;
+    const tops = group.children
       .map((id) => positions.get(id))
       .filter((p) => p !== undefined);
     if (tops.length === 0) continue;
@@ -58,14 +58,14 @@ export function childSegments(
 
     let midX: number;
     let botY: number;
-    if (couple.parents.length === 2) {
-      const a = center(couple.parents[0], positions);
-      const b = center(couple.parents[1], positions);
+    if (group.members.length === 2) {
+      const a = center(group.members[0], positions);
+      const b = center(group.members[1], positions);
       if (!a || !b) continue;
       midX = (a.x + b.x) / 2;
       botY = a.y;
     } else {
-      const p = positions.get(couple.parents[0]);
+      const p = positions.get(group.members[0]);
       if (!p) continue;
       midX = p.x + CARD_W / 2;
       botY = p.y + CARD_H;
@@ -110,13 +110,13 @@ export function siblingSegments(
 
 export function connectionSegments(
   positions: Map<string, Point>,
-  couples: CoupleLayout[],
+  groups: GroupGrid[],
   siblingGroups: Array<string[]> = [],
 ): string[] {
   const buses = createBusAllocator();
   return [
-    ...partnerSegments(positions, couples),
-    ...childSegments(positions, couples, buses),
+    ...partnerSegments(positions, groups),
+    ...childSegments(positions, groups, buses),
     ...siblingSegments(positions, siblingGroups, buses),
   ];
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { branchActions, filterCollapsed } from "$lib/family/filter";
-import { computeLayout } from "$lib/family/layout";
+import { computeGrid, gridPositions } from "$lib/family/layout";
 import type { DisplayMode } from "$lib/family/subtree";
 import { computeSubtree } from "$lib/family/subtree";
 import { manager, tree } from "$lib/family/tree.svelte";
@@ -60,7 +60,8 @@ const viewData = $derived(
   }),
 );
 const actions = $derived(branchActions(fullData, pov.focalId));
-const layout = $derived(computeLayout(viewData));
+const grid = $derived(computeGrid(viewData, pov.focalId));
+const layout = $derived(gridPositions(grid));
 const siblingGroups = $derived(
   Object.values(viewData.families)
     .filter((f) => f.husbandId === undefined && f.wifeId === undefined)
@@ -263,7 +264,7 @@ function goBack() {
       >
         <ConnectionLines
           positions={layout.positions}
-          couples={layout.couples}
+          groups={grid.groups}
           {siblingGroups}
         />
       </svg>

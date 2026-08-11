@@ -1,4 +1,4 @@
-import type { TreeData } from "./types";
+import type { Family, Person, TreeData } from "./types";
 
 export const CARD_W = 160;
 export const CARD_H = 90;
@@ -15,122 +15,198 @@ export interface Point {
   y: number;
 }
 
-export interface CoupleLayout {
-  parents: string[];
-  col: number;
+export interface CardGrid {
   row: number;
+  col: number;
+}
+
+export interface GroupGrid {
+  members: string[];
   children: string[];
+  row: number;
+  col: number;
+}
+
+export interface GridLayout {
+  cards: Map<string, CardGrid>;
+  groups: GroupGrid[];
+  siblingGroups: string[][];
 }
 
 export interface LayoutResult {
   positions: Map<string, Point>;
-  couples: CoupleLayout[];
   width: number;
   height: number;
 }
 
-export function computeLayout(data: TreeData): LayoutResult {
+interface Group {
+  members: string[];
+  children: string[];
+  col: number;
+  row: number;
+}
+
+function directAncestorsOf(
+  people: Record<string, Person>,
+  families: Record<string, Family>,
+  pov: string,
+): Set<string> | null {
+  if (!people[pov]) return null;
+  const parents = new Map<string, string[]>();
+  for (const p of Object.values(people)) parents.set(p.id, []);
+  for (const fam of Object.values(families)) {
+    const parentIds = [fam.husbandId, fam.wifeId].filter(
+      (id): id is string => id !== undefined,
+    );
+    for (const childId of fam.childrenIds) {
+      if (!people[childId]) continue;
+      for (const pid of parentIds) parents.get(childId)?.push(pid);
+    }
+  }
+  const result = new Set<string>();
+  const queue = [pov];
+  while (queue.length > 0) {
+    const id = queue.pop();
+    if (id === undefined || result.has(id)) continue;
+    result.add(id);
+    queue.push(...(parents.get(id) ?? []));
+  }
+  return result;
+}
+
+function sortChildrenForPOV(
+  childrenIds: string[],
+  directAncestors: Set<string>,
+  people: Record<string, Person>,
+): string[] {
+  return [...childrenIds].sort((aId, bId) => {
+    const aIsAncestor = directAncestors.has(aId);
+    const bIsAncestor = directAncestors.has(bId);
+
+    const aPerson = people[aId];
+    const bPerson = people[bId];
+
+    const getPriority = (isAncestor: boolean, person?: Person) => {
+      if (!isAncestor) return 1;
+      return person?.gender === "female" ? 0 : 2;
+    };
+
+    return (
+      getPriority(aIsAncestor, aPerson) - getPriority(bIsAncestor, bPerson)
+    );
+  });
+}
+
+export function computeGrid(data: TreeData, pov?: string): GridLayout {
   const people = data.people;
   const families = data.families;
   const list = Object.values(people);
   const byId = new Map(list.map((p) => [p.id, p]));
-  const couples: CoupleLayout[] = [];
-  const coupleOf = new Map<string, CoupleLayout>();
+  const groups: Group[] = [];
+  const groupOf = new Map<string, Group>();
   const assigned = new Set<string>();
 
+  const directAncestors = pov ? directAncestorsOf(people, families, pov) : null;
+  const childrenOf = (fam: Family) => {
+    const ids = directAncestors
+      ? sortChildrenForPOV(fam.childrenIds, directAncestors, people)
+      : fam.childrenIds;
+    return ids.filter((id) => byId.has(id));
+  };
+
   for (const fam of Object.values(families)) {
-    const parents = [fam.husbandId, fam.wifeId].filter(
+    const members = [fam.husbandId, fam.wifeId].filter(
       (id): id is string => id !== undefined && byId.has(id),
     );
-    if (parents.length === 0) continue;
-    const unassigned = parents.filter((id) => !assigned.has(id));
+    if (members.length === 0) continue;
+    const unassigned = members.filter((id) => !assigned.has(id));
     if (unassigned.length === 0) continue;
-    const couple: CoupleLayout = {
-      parents: unassigned,
+    const group: Group = {
+      members: unassigned,
       col: 0,
       row: 0,
-      children: fam.childrenIds.filter((id) => byId.has(id)),
+      children: childrenOf(fam),
     };
-    couples.push(couple);
+    groups.push(group);
     for (const id of unassigned) {
-      coupleOf.set(id, couple);
+      groupOf.set(id, group);
       assigned.add(id);
     }
   }
 
   for (const p of list) {
     if (assigned.has(p.id)) continue;
-    const couple: CoupleLayout = {
-      parents: [p.id],
+    const group: Group = {
+      members: [p.id],
       col: 0,
       row: 0,
       children: [],
     };
-    couples.push(couple);
-    coupleOf.set(p.id, couple);
+    groups.push(group);
+    groupOf.set(p.id, group);
     assigned.add(p.id);
   }
 
-  const sameRowParent = new Map<CoupleLayout, CoupleLayout>();
-  const find = (c: CoupleLayout): CoupleLayout => {
-    const p = sameRowParent.get(c);
-    if (!p) return c;
+  const sameRowParent = new Map<Group, Group>();
+  const find = (g: Group): Group => {
+    const p = sameRowParent.get(g);
+    if (!p) return g;
     const root = find(p);
-    sameRowParent.set(c, root);
+    sameRowParent.set(g, root);
     return root;
   };
-  const union = (a: CoupleLayout, b: CoupleLayout) => {
+  const union = (a: Group, b: Group) => {
     const ra = find(a);
     const rb = find(b);
     if (ra !== rb) sameRowParent.set(rb, ra);
   };
 
-  const siblingGroups: CoupleLayout[][] = [];
+  const siblingGroups: Group[][] = [];
   for (const fam of Object.values(families)) {
     if (fam.husbandId !== undefined || fam.wifeId !== undefined) continue;
     const members = fam.childrenIds
-      .map((id) => coupleOf.get(id))
-      .filter((c): c is CoupleLayout => c !== undefined);
+      .map((id) => groupOf.get(id))
+      .filter((g): g is Group => g !== undefined);
     for (let i = 1; i < members.length; i++) union(members[0], members[i]);
     if (members.length >= 2) siblingGroups.push(members);
   }
 
-  const groupMembers = new Map<CoupleLayout, CoupleLayout[]>();
-  for (const couple of couples) {
-    const root = find(couple);
+  const groupMembers = new Map<Group, Group[]>();
+  for (const group of groups) {
+    const root = find(group);
     const arr = groupMembers.get(root) ?? [];
-    arr.push(couple);
+    arr.push(group);
     groupMembers.set(root, arr);
   }
 
-  const parentCouples = new Map<CoupleLayout, CoupleLayout[]>();
-  const childCouples = new Map<CoupleLayout, CoupleLayout[]>();
-  for (const couple of couples) {
-    parentCouples.set(couple, []);
-    childCouples.set(couple, []);
+  const parentGroups = new Map<Group, Group[]>();
+  const childGroups = new Map<Group, Group[]>();
+  for (const group of groups) {
+    parentGroups.set(group, []);
+    childGroups.set(group, []);
   }
-  for (const couple of couples) {
-    for (const childId of couple.children) {
-      const child = coupleOf.get(childId);
-      if (child && child !== couple) {
-        parentCouples.get(child)?.push(couple);
-        childCouples.get(couple)?.push(child);
+  for (const group of groups) {
+    for (const childId of group.children) {
+      const child = groupOf.get(childId);
+      if (child && child !== group) {
+        parentGroups.get(child)?.push(group);
+        childGroups.get(group)?.push(child);
       }
     }
   }
 
-  const rows = new Map<CoupleLayout, number>(couples.map((c) => [c, 0]));
-  for (let i = 0; i <= couples.length; i++) {
+  const rows = new Map<Group, number>(groups.map((g) => [g, 0]));
+  for (let i = 0; i <= groups.length; i++) {
     let changed = false;
-    for (const couple of couples) {
-      const r = rows.get(couple) ?? 0;
-      for (const child of childCouples.get(couple) ?? []) {
+    for (const group of groups) {
+      const r = rows.get(group) ?? 0;
+      for (const child of childGroups.get(group) ?? []) {
         if ((rows.get(child) ?? 0) < r + 1) {
           rows.set(child, r + 1);
           changed = true;
         }
       }
-      for (const parent of parentCouples.get(couple) ?? []) {
+      for (const parent of parentGroups.get(group) ?? []) {
         if ((rows.get(parent) ?? 0) < r - 1) {
           rows.set(parent, r - 1);
           changed = true;
@@ -150,19 +226,15 @@ export function computeLayout(data: TreeData): LayoutResult {
     }
     if (!changed) break;
   }
-  for (const couple of couples) couple.row = rows.get(couple) ?? 0;
+  for (const group of groups) group.row = rows.get(group) ?? 0;
 
-  const roots = couples.filter(
-    (c) => (parentCouples.get(c) ?? []).length === 0,
-  );
-  const visited = new Set<CoupleLayout>();
+  const roots = groups.filter((g) => (parentGroups.get(g) ?? []).length === 0);
+  const visited = new Set<Group>();
   const occupied = new Map<number, Array<[number, number]>>();
   let cursor = 0;
-  let maxRow = 0;
-  for (const couple of couples) maxRow = Math.max(maxRow, couple.row);
 
-  function cols(couple: CoupleLayout): number {
-    return couple.parents.length;
+  function cols(group: Group): number {
+    return group.members.length;
   }
 
   function snapCol(center: number, n: number): number {
@@ -204,107 +276,127 @@ export function computeLayout(data: TreeData): LayoutResult {
     return best === Infinity ? (lo + hi) / 2 : best;
   }
 
-  function preferDirection(couple: CoupleLayout): "left" | "right" | null {
+  function preferDirection(group: Group): "left" | "right" | null {
     let left = 0;
     let right = 0;
-    for (const child of childCouples.get(couple) ?? []) {
-      if (child.parents.length !== 2) continue;
-      const [husbandId, wifeId] = child.parents;
-      const coParents = parentCouples.get(child) ?? [];
+    for (const child of childGroups.get(group) ?? []) {
+      if (child.members.length !== 2) continue;
+      const [husbandId, wifeId] = child.members;
+      const coParents = parentGroups.get(child) ?? [];
       const paternal = coParents.some(
-        (p) => p !== couple && p.children.includes(husbandId),
+        (p) => p !== group && p.children.includes(husbandId),
       );
       const maternal = coParents.some(
-        (p) => p !== couple && p.children.includes(wifeId),
+        (p) => p !== group && p.children.includes(wifeId),
       );
-      if (couple.children.includes(husbandId) && maternal) left++;
-      if (couple.children.includes(wifeId) && paternal) right++;
+      if (group.children.includes(husbandId) && maternal) left++;
+      if (group.children.includes(wifeId) && paternal) right++;
     }
     if (left > right) return "left";
     if (right > left) return "right";
     return null;
   }
 
-  function layoutCouple(couple: CoupleLayout) {
-    if (visited.has(couple)) return;
-    visited.add(couple);
-    const n = cols(couple);
-    if (couple.children.length === 0) {
-      couple.col = cursor + n / 2;
+  function layoutGroup(group: Group) {
+    if (visited.has(group)) return;
+    visited.add(group);
+    const n = cols(group);
+    if (group.children.length === 0) {
+      group.col = cursor + n / 2;
       cursor += n;
-      record(couple.row, couple.col - n / 2, couple.col + n / 2);
+      record(group.row, group.col - n / 2, group.col + n / 2);
       return;
     }
 
-    for (const childId of couple.children) {
-      const child = coupleOf.get(childId);
-      if (child) layoutCouple(child);
+    for (const childId of group.children) {
+      const child = groupOf.get(childId);
+      if (child) layoutGroup(child);
     }
 
-    const first = coupleOf.get(couple.children[0]);
+    const first = groupOf.get(group.children[0]);
     const last =
-      couple.children.length > 1
-        ? coupleOf.get(couple.children[couple.children.length - 1])
+      group.children.length > 1
+        ? groupOf.get(group.children[group.children.length - 1])
         : first;
     if (first && last) {
-      const dir = preferDirection(couple);
-      if (n === 1 && first === last && first.parents.length === 2) {
-        couple.col = dir === "right" ? first.col + 0.5 : first.col - 0.5;
+      const dir = preferDirection(group);
+      if (n === 1 && first === last && first.members.length === 2) {
+        group.col = dir === "right" ? first.col + 0.5 : first.col - 0.5;
       } else {
-        couple.col = snapCol((first.col + last.col) / 2, n);
+        group.col = snapCol((first.col + last.col) / 2, n);
       }
-      cursor = Math.max(cursor, couple.col + n / 2);
+      cursor = Math.max(cursor, group.col + n / 2);
     } else {
-      couple.col = cursor + n / 2;
+      group.col = cursor + n / 2;
       cursor += n;
     }
 
-    couple.col = freeCenter(
-      couple.row,
-      couple.col - n / 2,
-      couple.col + n / 2,
-      preferDirection(couple),
+    group.col = freeCenter(
+      group.row,
+      group.col - n / 2,
+      group.col + n / 2,
+      preferDirection(group),
     );
-    record(couple.row, couple.col - n / 2, couple.col + n / 2);
+    record(group.row, group.col - n / 2, group.col + n / 2);
   }
 
-  for (const root of roots) layoutCouple(root);
+  for (const root of roots) layoutGroup(root);
 
   let minLeft = 0;
-  for (const couple of couples) {
-    minLeft = Math.min(minLeft, couple.col - cols(couple) / 2);
+  for (const group of groups) {
+    minLeft = Math.min(minLeft, group.col - cols(group) / 2);
   }
   if (minLeft < 0) {
-    for (const couple of couples) couple.col -= minLeft;
+    for (const group of groups) group.col -= minLeft;
   }
 
-  const positions = new Map<string, Point>();
-  const topBusPadding = siblingGroups.some((members) =>
-    members.every((m) => (rows.get(m) ?? 0) === 0),
+  const cards = new Map<string, CardGrid>();
+  const outGroups: GroupGrid[] = [];
+  for (const group of groups) {
+    const n = cols(group);
+    const left = group.col - n / 2;
+    outGroups.push({
+      members: group.members,
+      children: group.children,
+      row: group.row,
+      col: left,
+    });
+    group.members.forEach((id, k) => {
+      cards.set(id, { row: group.row, col: left + k });
+    });
+  }
+
+  const siblingIds = siblingGroups.map((members) =>
+    members.flatMap((g) => g.members),
+  );
+
+  return { cards, groups: outGroups, siblingGroups: siblingIds };
+}
+
+export function gridPositions(grid: GridLayout): LayoutResult {
+  const topBusPadding = grid.siblingGroups.some((members) =>
+    members.every((id) => grid.cards.get(id)?.row === 0),
   )
     ? BUS_OFFSET
     : 0;
+  const positions = new Map<string, Point>();
   let maxRight = 0;
-  for (const couple of couples) {
-    const n = cols(couple);
-    const x = MARGIN + (couple.col - n / 2) * COL_W;
-    const y = MARGIN + topBusPadding + couple.row * ROW_H;
-    if (n === 1) {
-      const [parent] = couple.parents;
-      positions.set(parent, { x, y });
-      maxRight = Math.max(maxRight, x + CARD_W);
-    } else {
-      const [a, b] = couple.parents;
-      positions.set(a, { x, y });
-      positions.set(b, { x: x + COL_W, y });
-      maxRight = Math.max(maxRight, x + CARD_W * 2 + CARD_GAP);
-    }
+  let maxRow = 0;
+  for (const [id, card] of grid.cards) {
+    const x = MARGIN + card.col * COL_W;
+    const y = MARGIN + topBusPadding + card.row * ROW_H;
+    positions.set(id, { x, y });
+    maxRight = Math.max(maxRight, x + CARD_W);
+    maxRow = Math.max(maxRow, card.row);
   }
-
   const width = Math.max(1, maxRight + MARGIN);
   const height = Math.max(
     1,
     topBusPadding + maxRow * ROW_H + CARD_H + MARGIN * 2,
   );
-  return { positions, couples, width, height };
+  return { positions, width, height };
+}
+
+export function computeLayout(data: TreeData, pov?: string): LayoutResult {
+  return gridPositions(computeGrid(data, pov));
 }
