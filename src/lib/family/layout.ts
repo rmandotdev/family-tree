@@ -46,7 +46,7 @@ interface Group {
   row: number;
 }
 
-function directAncestorsOf(
+function povPathOf(
   people: Record<string, Person>,
   families: Record<string, Family>,
   pov: string,
@@ -71,29 +71,37 @@ function directAncestorsOf(
     result.add(id);
     queue.push(...(parents.get(id) ?? []));
   }
+  const ancestors = new Set(result);
+  for (const fam of Object.values(families)) {
+    const parentIds = [fam.husbandId, fam.wifeId].filter(
+      (id): id is string => id !== undefined,
+    );
+    for (const pid of parentIds) {
+      if (!ancestors.has(pid)) continue;
+      for (const other of parentIds) if (other !== pid) result.add(other);
+    }
+  }
   return result;
 }
 
 function sortChildrenForPOV(
   childrenIds: string[],
-  directAncestors: Set<string>,
+  onPath: Set<string>,
   people: Record<string, Person>,
 ): string[] {
   return [...childrenIds].sort((aId, bId) => {
-    const aIsAncestor = directAncestors.has(aId);
-    const bIsAncestor = directAncestors.has(bId);
+    const aIsOnPath = onPath.has(aId);
+    const bIsOnPath = onPath.has(bId);
 
     const aPerson = people[aId];
     const bPerson = people[bId];
 
-    const getPriority = (isAncestor: boolean, person?: Person) => {
-      if (!isAncestor) return 1;
+    const getPriority = (isOnPath: boolean, person?: Person) => {
+      if (!isOnPath) return 1;
       return person?.gender === "female" ? 0 : 2;
     };
 
-    return (
-      getPriority(aIsAncestor, aPerson) - getPriority(bIsAncestor, bPerson)
-    );
+    return getPriority(aIsOnPath, aPerson) - getPriority(bIsOnPath, bPerson);
   });
 }
 
@@ -106,10 +114,10 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
   const groupOf = new Map<string, Group>();
   const assigned = new Set<string>();
 
-  const directAncestors = pov ? directAncestorsOf(people, families, pov) : null;
+  const onPath = pov ? povPathOf(people, families, pov) : null;
   const childrenOf = (fam: Family) => {
-    const ids = directAncestors
-      ? sortChildrenForPOV(fam.childrenIds, directAncestors, people)
+    const ids = onPath
+      ? sortChildrenForPOV(fam.childrenIds, onPath, people)
       : fam.childrenIds;
     return ids.filter((id) => byId.has(id));
   };

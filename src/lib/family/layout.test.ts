@@ -389,7 +389,7 @@ describe("computeGrid with a point of view", () => {
       [
         family("f1", father.id, mother.id, [me.id]),
         family("f2", grandpa.id, undefined, [father.id, uncle.id]),
-        family("f3", undefined, grandma.id, [mother.id, aunt.id]),
+        family("f3", undefined, grandma.id, [aunt.id, mother.id]),
       ],
     );
 
@@ -398,6 +398,31 @@ describe("computeGrid with a point of view", () => {
     expect(card(grid, "uncle").col).toBeLessThan(card(grid, "father").col);
     expect(card(grid, "aunt").col).toBeGreaterThan(card(grid, "mother").col);
     expect(card(grid, "father").col + 1).toBe(card(grid, "mother").col);
+  });
+
+  it("mirrors the arrangement when the POV is the partner", () => {
+    const me = person("me");
+    const father = person("father", "male");
+    const mother = person("mother", "female");
+    const grandpa = person("grandpa", "male");
+    const grandma = person("grandma", "female");
+    const uncle = person("uncle", "male");
+    const aunt = person("aunt", "female");
+
+    const data = tree(
+      [me, father, mother, grandpa, grandma, uncle, aunt],
+      [
+        family("f1", father.id, mother.id, [me.id]),
+        family("f2", grandpa.id, undefined, [father.id, uncle.id]),
+        family("f3", undefined, grandma.id, [mother.id, aunt.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, mother.id);
+
+    expect(card(grid, "uncle").col).toBeLessThan(card(grid, "father").col);
+    expect(card(grid, "father").col + 1).toBe(card(grid, "mother").col);
+    expect(card(grid, "aunt").col).toBeGreaterThan(card(grid, "mother").col);
   });
 
   it("sorts direct-ancestor siblings toward the outside of the POV's partner", () => {
