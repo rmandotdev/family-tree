@@ -1,56 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import { branchActions, filterCollapsed } from "./filter";
-import { computeSubtree } from "./subtree";
-import type { Family, Gender, Person, TreeData } from "./types";
-
-function person(id: string, gender: Gender = "unknown"): Person {
-  return { id, firstName: id, lastName: "", gender, familyIds: [] };
-}
-
-function family(
-  id: string,
-  husband: string,
-  wife: string | undefined,
-  children: string[] = [],
-): Family {
-  return { id, husbandId: husband, wifeId: wife, childrenIds: children };
-}
-
-function tree(people: Person[], families: Family[]): TreeData {
-  return {
-    people: Object.fromEntries(people.map((p) => [p.id, p])),
-    families: Object.fromEntries(families.map((f) => [f.id, f])),
-  };
-}
-
-function ids(data: TreeData): string[] {
-  return Object.keys(data.people).sort();
-}
-
-function demoTree(): TreeData {
-  const adam = person("adam");
-  const eve = person("eve");
-  const john = person("john");
-  const mary = person("mary");
-  const bob = person("bob");
-  const alice = person("alice");
-  const charlie = person("charlie");
-  const david = person("david");
-  const zoe = person("zoe");
-  const mark = person("mark");
-  const eveLu = person("evelu");
-  const fred = person("fred");
-  return tree(
-    [adam, eve, john, mary, bob, alice, charlie, david, zoe, mark, eveLu, fred],
-    [
-      family("f1", adam.id, eve.id, [john.id]),
-      family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
-      family("f3", david.id, alice.id, [zoe.id]),
-      family("f4", charlie.id, eveLu.id, [fred.id]),
-      family("f5", mark.id, undefined, [david.id]),
-    ],
-  );
-}
+import { branchActions, filterCollapsed } from "../filter";
+import { computeSubtree } from "../subtree";
+import { demoTree, ids } from "./test-helpers";
 
 describe("filterCollapsed", () => {
   it("returns the data unchanged when nothing is collapsed", () => {

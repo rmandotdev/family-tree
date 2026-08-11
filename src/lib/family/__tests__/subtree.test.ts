@@ -1,30 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { computeSubtree } from "./subtree";
-import type { Family, Gender, Person, TreeData } from "./types";
-
-function person(id: string, gender: Gender = "unknown"): Person {
-  return { id, firstName: id, lastName: "", gender, familyIds: [] };
-}
-
-function family(
-  id: string,
-  husband?: string,
-  wife?: string,
-  children: string[] = [],
-): Family {
-  return { id, husbandId: husband, wifeId: wife, childrenIds: children };
-}
-
-function tree(people: Person[], families: Family[]): TreeData {
-  return {
-    people: Object.fromEntries(people.map((p) => [p.id, p])),
-    families: Object.fromEntries(families.map((f) => [f.id, f])),
-  };
-}
-
-function ids(subtree: TreeData): string[] {
-  return Object.keys(subtree.people).sort();
-}
+import { computeSubtree } from "../subtree";
+import { demoTree, family, ids, person, tree } from "./test-helpers";
 
 describe("computeSubtree", () => {
   it("returns an empty tree for an unknown focal person", () => {
@@ -72,47 +48,23 @@ describe("computeSubtree", () => {
   });
 
   it("does not include the partner's parents or siblings", () => {
-    const adam = person("adam");
-    const eve = person("eve");
-    const john = person("john");
-    const mary = person("mary");
-    const bob = person("bob");
-    const alice = person("alice");
-    const charlie = person("charlie");
-    const david = person("david");
-    const zoe = person("zoe");
-    const mark = person("mark");
-    const eveLu = person("evelu");
-    const fred = person("fred");
-    const t = tree(
-      [
-        adam,
-        eve,
-        john,
-        mary,
-        bob,
-        alice,
-        charlie,
-        david,
-        zoe,
-        mark,
-        eveLu,
-        fred,
-      ],
-      [
-        family("f1", adam.id, eve.id, [john.id]),
-        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
-        family("f3", david.id, alice.id, [zoe.id]),
-        family("f4", charlie.id, eveLu.id, [fred.id]),
-        family("f5", mark.id, undefined, [david.id]),
-      ],
-    );
+    const t = demoTree();
 
-    const sub = computeSubtree(t, alice.id);
+    const sub = computeSubtree(t, "alice");
     expect(ids(sub)).toEqual(
-      [adam, eve, john, mary, bob, alice, charlie, david, zoe, eveLu, fred]
-        .map((p) => p.id)
-        .sort(),
+      [
+        "adam",
+        "eve",
+        "john",
+        "mary",
+        "bob",
+        "alice",
+        "charlie",
+        "david",
+        "zoe",
+        "evelu",
+        "fred",
+      ].sort(),
     );
     expect(sub.families).toHaveProperty("f1");
     expect(sub.families).toHaveProperty("f2");
@@ -122,45 +74,11 @@ describe("computeSubtree", () => {
   });
 
   it("excludes the in-law's parents when the focal person is on the other side", () => {
-    const adam = person("adam");
-    const eve = person("eve");
-    const john = person("john");
-    const mary = person("mary");
-    const bob = person("bob");
-    const alice = person("alice");
-    const charlie = person("charlie");
-    const david = person("david");
-    const zoe = person("zoe");
-    const mark = person("mark");
-    const eveLu = person("evelu");
-    const fred = person("fred");
-    const t = tree(
-      [
-        adam,
-        eve,
-        john,
-        mary,
-        bob,
-        alice,
-        charlie,
-        david,
-        zoe,
-        mark,
-        eveLu,
-        fred,
-      ],
-      [
-        family("f1", adam.id, eve.id, [john.id]),
-        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
-        family("f3", david.id, alice.id, [zoe.id]),
-        family("f4", charlie.id, eveLu.id, [fred.id]),
-        family("f5", mark.id, undefined, [david.id]),
-      ],
-    );
+    const t = demoTree();
 
-    const sub = computeSubtree(t, david.id);
+    const sub = computeSubtree(t, "david");
 
-    expect(ids(sub)).toEqual([mark, david, alice, zoe].map((p) => p.id).sort());
+    expect(ids(sub)).toEqual(["alice", "david", "mark", "zoe"].sort());
     expect(sub.families).toHaveProperty("f3");
     expect(sub.families).toHaveProperty("f5");
     expect(sub.families).not.toHaveProperty("f1");
@@ -216,46 +134,12 @@ describe("computeSubtree", () => {
   });
 
   it("direct mode shows the direct line without siblings' families or aunts/uncles", () => {
-    const adam = person("adam");
-    const eve = person("eve");
-    const john = person("john");
-    const mary = person("mary");
-    const bob = person("bob");
-    const alice = person("alice");
-    const charlie = person("charlie");
-    const david = person("david");
-    const zoe = person("zoe");
-    const mark = person("mark");
-    const eveLu = person("evelu");
-    const fred = person("fred");
-    const t = tree(
-      [
-        adam,
-        eve,
-        john,
-        mary,
-        bob,
-        alice,
-        charlie,
-        david,
-        zoe,
-        mark,
-        eveLu,
-        fred,
-      ],
-      [
-        family("f1", adam.id, eve.id, [john.id]),
-        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
-        family("f3", david.id, alice.id, [zoe.id]),
-        family("f4", charlie.id, eveLu.id, [fred.id]),
-        family("f5", mark.id, undefined, [david.id]),
-      ],
-    );
+    const t = demoTree();
 
-    const sub = computeSubtree(t, zoe.id, { mode: "direct" });
+    const sub = computeSubtree(t, "zoe", { mode: "direct" });
 
     expect(ids(sub)).toEqual(
-      [adam, eve, john, mary, alice, david, zoe, mark].map((p) => p.id).sort(),
+      ["adam", "eve", "john", "mary", "alice", "david", "zoe", "mark"].sort(),
     );
     expect(sub.families).toHaveProperty("f1");
     expect(sub.families).toHaveProperty("f2");
@@ -265,48 +149,23 @@ describe("computeSubtree", () => {
   });
 
   it("directAndChildren mode adds the ancestors' and siblings' children", () => {
-    const adam = person("adam");
-    const eve = person("eve");
-    const john = person("john");
-    const mary = person("mary");
-    const bob = person("bob");
-    const alice = person("alice");
-    const charlie = person("charlie");
-    const david = person("david");
-    const zoe = person("zoe");
-    const mark = person("mark");
-    const eveLu = person("evelu");
-    const fred = person("fred");
-    const t = tree(
-      [
-        adam,
-        eve,
-        john,
-        mary,
-        bob,
-        alice,
-        charlie,
-        david,
-        zoe,
-        mark,
-        eveLu,
-        fred,
-      ],
-      [
-        family("f1", adam.id, eve.id, [john.id]),
-        family("f2", john.id, mary.id, [bob.id, alice.id, charlie.id]),
-        family("f3", david.id, alice.id, [zoe.id]),
-        family("f4", charlie.id, eveLu.id, [fred.id]),
-        family("f5", mark.id, undefined, [david.id]),
-      ],
-    );
+    const t = demoTree();
 
-    const sub = computeSubtree(t, zoe.id, { mode: "directAndChildren" });
+    const sub = computeSubtree(t, "zoe", { mode: "directAndChildren" });
 
     expect(ids(sub)).toEqual(
-      [adam, eve, john, mary, bob, alice, charlie, david, zoe, mark]
-        .map((p) => p.id)
-        .sort(),
+      [
+        "adam",
+        "eve",
+        "john",
+        "mary",
+        "bob",
+        "alice",
+        "charlie",
+        "david",
+        "zoe",
+        "mark",
+      ].sort(),
     );
     expect(sub.families).toHaveProperty("f2");
     expect(sub.families).not.toHaveProperty("f4");

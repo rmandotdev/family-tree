@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { GroupGrid, Point } from "./layout";
+import type { GroupGrid, Point } from "../layout";
 import {
   BUS_OFFSET,
   BUS_STEP,
@@ -8,13 +8,13 @@ import {
   CARD_W,
   COL_W,
   ROW_H,
-} from "./layout";
+} from "../layout";
 import {
   childSegments,
   connectionSegments,
   partnerSegments,
   siblingSegments,
-} from "./lines";
+} from "../lines";
 
 function positions(entries: Array<[string, Point]>): Map<string, Point> {
   return new Map(entries);

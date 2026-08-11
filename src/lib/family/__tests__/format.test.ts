@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
-import { formatLifespan } from "./format";
-import type { Person } from "./types";
+import { formatLifespan } from "../format";
+import type { Person } from "../types";
 
 function person(overrides: Partial<Person> = {}): Person {
   return {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import type { FamilyTreeState } from "./tree";
-import { createFamilyTree } from "./tree";
-import type { PersonInput } from "./types";
+import type { FamilyTreeState } from "../tree";
+import { createFamilyTree } from "../tree";
+import type { PersonInput } from "../types";
 
 function makeState(): FamilyTreeState {
   return { people: {}, families: {}, sourceId: { value: null } };

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
-import type { TreeManagerState, TreeStorage } from "./tree-manager";
-import { createTreeManager } from "./tree-manager";
-import type { Person, TreeDataWithSource, TreeMeta } from "./types";
+import type { TreeManagerState, TreeStorage } from "../tree-manager";
+import { createTreeManager } from "../tree-manager";
+import type { Person, TreeDataWithSource, TreeMeta } from "../types";
 
 function makeState(): TreeManagerState {
   return {
