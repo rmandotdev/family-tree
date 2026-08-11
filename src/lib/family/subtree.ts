@@ -163,8 +163,10 @@ export function computeSubtree(
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
     const parentIds = parentsOf(fam);
-    if (!parentIds.every((id) => included.has(id))) continue;
-
+    const hasAllParents = parentIds.every((id) => included.has(id));
+    const hasSomeParent = parentIds.some((id) => included.has(id));
+    const hasIncludedChild = fam.childrenIds.some((cid) => included.has(cid));
+    if (!hasAllParents && !(hasSomeParent && hasIncludedChild)) continue;
     outFamilies[fam.id] = fam;
   }
 

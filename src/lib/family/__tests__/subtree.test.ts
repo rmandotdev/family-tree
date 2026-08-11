@@ -253,4 +253,27 @@ describe("computeSubtree", () => {
 
     expect(ids(sub)).toEqual([alice.id, bob.id, dan.id].sort());
   });
+
+  it("includes siblings' children without displaying siblings' partners in directAndChildren mode", () => {
+    const t = demoTree();
+    const sub = computeSubtree(t, "bob", { mode: "directAndChildren" });
+
+    expect(ids(sub)).toEqual(
+      [
+        "adam",
+        "eve",
+        "john",
+        "mary",
+        "bob",
+        "alice",
+        "charlie",
+        "zoe",
+        "fred",
+      ].sort(),
+    );
+    expect(sub.families).toHaveProperty("f1");
+    expect(sub.families).toHaveProperty("f2");
+    expect(sub.families).toHaveProperty("f3");
+    expect(sub.families).toHaveProperty("f4");
+  });
 });
