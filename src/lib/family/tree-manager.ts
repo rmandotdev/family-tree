@@ -1,16 +1,11 @@
 import { createDemoTree } from "./demo";
-import type { Family, Person, TreeDataWithSource, TreeMeta } from "./types";
-
-interface TreeManagerData {
-  people: Record<string, Person>;
-  families: Record<string, Family>;
-  sourceId: { value: string | null };
-}
+import type { FamilyTreeState } from "./tree";
+import type { TreeDataWithSource, TreeMeta } from "./types";
 
 export interface TreeManagerState {
   metas: TreeMeta[];
   activeTreeId: { value: string | null };
-  data: TreeManagerData;
+  data: FamilyTreeState;
 }
 
 export interface TreeStorage {

@@ -7,28 +7,24 @@ import {
   saveTreeIndex,
 } from "./persistence";
 import { createFamilyTree } from "./tree";
+import type { TreeManagerState } from "./tree-manager";
 import { createTreeManager } from "./tree-manager";
-import type { Family, Person, TreeMeta } from "./types";
 
-const treeMetas = $state<TreeMeta[]>([]);
-const activeTreeId = $state<{ value: string | null }>({ value: null });
+const state = $state<TreeManagerState>({
+  metas: [],
+  activeTreeId: { value: null },
+  data: { people: {}, families: {}, sourceId: { value: null } },
+});
 
-const people = $state<Record<string, Person>>({});
-const families = $state<Record<string, Family>>({});
-const sourceId = $state<{ value: string | null }>({ value: null });
+export const manager = createTreeManager(state, {
+  loadIndex: loadTreeIndex,
+  saveIndex: saveTreeIndex,
+  loadData: loadTreeData,
+  saveData: saveTreeData,
+  deleteData: deleteTreeData,
+});
 
-export const manager = createTreeManager(
-  { metas: treeMetas, activeTreeId, data: { people, families, sourceId } },
-  {
-    loadIndex: loadTreeIndex,
-    saveIndex: saveTreeIndex,
-    loadData: loadTreeData,
-    saveData: saveTreeData,
-    deleteData: deleteTreeData,
-  },
-);
-
-export const tree = createFamilyTree({ people, families, sourceId }, () => {
+export const tree = createFamilyTree(state.data, () => {
   if (browser) manager.persist();
 });
 
