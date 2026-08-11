@@ -5,6 +5,8 @@ import type { DisplayMode } from "$lib/family/subtree";
 import { computeSubtree } from "$lib/family/subtree";
 import { tree } from "$lib/family/tree.svelte";
 import type { Gender } from "$lib/family/types";
+import type { RelativeRelation } from "./AddRelativeModal.svelte";
+import AddRelativeModal from "./AddRelativeModal.svelte";
 import ConnectionLines from "./ConnectionLines.svelte";
 import FamilyCanvas from "./FamilyCanvas.svelte";
 import type { CardAction } from "./PersonCard.svelte";
@@ -30,6 +32,7 @@ let collapseByPov = $state<Record<string, PovCollapseState>>({});
 let openMenuId = $state<string | null>(null);
 let recenterKey = $state(0);
 let editing = $state<{ id: string | null } | null>(null);
+let addRelativeTo = $state<string | null>(null);
 let addRelativePreset = $state<{
   spouseId?: string;
   motherId?: string;
@@ -55,6 +58,9 @@ const layout = $derived(computeLayout(viewData));
 const visibleList = $derived(Object.values(viewData.people));
 const focal = $derived(tree.people[pov.focalId] ?? null);
 const onSource = $derived(pov.focalId === tree.sourceId);
+const addRelativeTarget = $derived(
+  addRelativeTo ? (tree.people[addRelativeTo] ?? null) : null,
+);
 
 function toggleMenu(id: string) {
   if (canvas.isPanning) return;
@@ -83,10 +89,7 @@ function openEditor(id: string | null) {
   editing = { id };
 }
 
-function openAddRelative(
-  id: string,
-  relation: "child" | "spouse" | "sibling" | "mother" | "father",
-) {
+function openAddRelative(id: string, relation: RelativeRelation) {
   const person = tree.people[id];
   if (!person) return;
   let preset: typeof addRelativePreset = null;
@@ -129,6 +132,12 @@ function oppositeGender(gender: Gender): Gender | undefined {
   return undefined;
 }
 
+function handleRelativeSelect(relation: RelativeRelation) {
+  const id = addRelativeTo;
+  addRelativeTo = null;
+  if (id) openAddRelative(id, relation);
+}
+
 function handleAction(personId: string, action: CardAction) {
   openMenuId = null;
   switch (action) {
@@ -139,20 +148,8 @@ function handleAction(personId: string, action: CardAction) {
       pov = { focalId: personId };
       recenterKey += 1;
       break;
-    case "addChild":
-      openAddRelative(personId, "child");
-      break;
-    case "addSpouse":
-      openAddRelative(personId, "spouse");
-      break;
-    case "addSibling":
-      openAddRelative(personId, "sibling");
-      break;
-    case "addMother":
-      openAddRelative(personId, "mother");
-      break;
-    case "addFather":
-      openAddRelative(personId, "father");
+    case "addRelative":
+      addRelativeTo = personId;
       break;
     case "toggleChildren":
       toggleCollapse("children", personId);
@@ -241,7 +238,6 @@ function goBack() {
       </svg>
 
       {#each visibleList as person (person.id)}
-        {@const fam = person.parentFamilyId ? tree.families[person.parentFamilyId] : undefined}
         {@const pos = layout.positions.get(person.id)}
         {@const personActions = actions.get(person.id)}
         {@const parentsHidden = (personActions?.parentsHiddenByDefault ?? false) ? !expandedParents.has(person.id) : collapsedParents.has(person.id)}
@@ -255,8 +251,6 @@ function goBack() {
             parentsCollapsed={parentsHidden}
             canToggleChildren={personActions?.canCollapseChildren ?? false}
             canToggleParents={personActions?.canCollapseParents ?? false}
-            motherMissing={fam?.wifeId === undefined}
-            fatherMissing={fam?.husbandId === undefined}
             isPov={person.id === pov.focalId}
             onToggleMenu={() => toggleMenu(person.id)}
             onAction={(action) => handleAction(person.id, action)}
@@ -292,6 +286,14 @@ function goBack() {
         editing = null;
         addRelativePreset = null;
       }}
+    />
+  {/if}
+
+  {#if addRelativeTarget}
+    <AddRelativeModal
+      person={addRelativeTarget}
+      onClose={() => (addRelativeTo = null)}
+      onSelect={handleRelativeSelect}
     />
   {/if}
 </div>

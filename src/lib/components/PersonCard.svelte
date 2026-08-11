@@ -6,11 +6,7 @@ import type { Person } from "$lib/family/types";
 export type CardAction =
   | "edit"
   | "focus"
-  | "addChild"
-  | "addSpouse"
-  | "addSibling"
-  | "addMother"
-  | "addFather"
+  | "addRelative"
   | "toggleChildren"
   | "toggleParents"
   | "makeSource";
@@ -24,8 +20,6 @@ let {
   parentsCollapsed,
   canToggleChildren,
   canToggleParents,
-  motherMissing,
-  fatherMissing,
   isPov,
   onToggleMenu,
   onAction,
@@ -38,8 +32,6 @@ let {
   parentsCollapsed: boolean;
   canToggleChildren: boolean;
   canToggleParents: boolean;
-  motherMissing: boolean;
-  fatherMissing: boolean;
   isPov: boolean;
   onToggleMenu: () => void;
   onAction: (action: CardAction) => void;
@@ -104,42 +96,10 @@ const lifespan = $derived(formatLifespan(person));
       <button
         class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
         type="button"
-        onclick={() => onAction("addChild")}
+        onclick={() => onAction("addRelative")}
       >
-        Add a child
+        Add a relative
       </button>
-      <button
-        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
-        type="button"
-        onclick={() => onAction("addSpouse")}
-      >
-        Add a spouse
-      </button>
-      <button
-        class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
-        type="button"
-        onclick={() => onAction("addSibling")}
-      >
-        Add a sibling
-      </button>
-      {#if motherMissing}
-        <button
-          class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
-          type="button"
-          onclick={() => onAction("addMother")}
-        >
-          Add a mother
-        </button>
-      {/if}
-      {#if fatherMissing}
-        <button
-          class="cursor-pointer block w-full px-3 py-1.5 text-left text-sm text-stone-700 hover:bg-stone-100"
-          type="button"
-          onclick={() => onAction("addFather")}
-        >
-          Add a father
-        </button>
-      {/if}
       {#if canToggleChildren || canToggleParents}
         <div class="my-1 border-t border-stone-100"></div>
         {#if canToggleChildren}
