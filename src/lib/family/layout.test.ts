@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { Point } from "./layout";
 import {
+  BUS_OFFSET,
   CARD_GAP,
   CARD_H,
   CARD_W,
@@ -43,6 +44,18 @@ describe("computeLayout", () => {
     expect(layout.positions.size).toBe(0);
     expect(layout.width).toBeGreaterThanOrEqual(1);
     expect(layout.height).toBeGreaterThanOrEqual(1);
+  });
+
+  it("adds top space so a parentless sibling bus is not clipped", () => {
+    const a = person("a");
+    const b = person("b");
+    const layout = computeLayout(
+      tree([a, b], [family("f1", undefined, undefined, [a.id, b.id])]),
+    );
+
+    expect(pos(layout, a.id).y).toBe(MARGIN + BUS_OFFSET);
+    expect(pos(layout, b.id).y).toBe(MARGIN + BUS_OFFSET);
+    expect(layout.height).toBe(BUS_OFFSET + CARD_H + MARGIN * 2);
   });
 
   it("positions a single unpaired person at the margin", () => {

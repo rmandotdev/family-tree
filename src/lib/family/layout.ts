@@ -236,11 +236,19 @@ export function computeLayout(data: TreeData): LayoutResult {
   }
 
   const positions = new Map<string, Point>();
+  const topBusPadding = Object.values(families).some(
+    (fam) =>
+      fam.husbandId === undefined &&
+      fam.wifeId === undefined &&
+      fam.childrenIds.filter((id) => byId.has(id)).length >= 2,
+  )
+    ? BUS_OFFSET
+    : 0;
   let maxRight = 0;
   for (const couple of couples) {
     const n = cols(couple);
     const x = MARGIN + (couple.col - n / 2) * COL_W;
-    const y = MARGIN + couple.row * ROW_H;
+    const y = MARGIN + topBusPadding + couple.row * ROW_H;
     if (n === 1) {
       const [parent] = couple.parents;
       positions.set(parent, { x, y });
@@ -254,6 +262,9 @@ export function computeLayout(data: TreeData): LayoutResult {
   }
 
   const width = Math.max(1, maxRight + MARGIN);
-  const height = Math.max(1, maxRow * ROW_H + CARD_H + MARGIN * 2);
+  const height = Math.max(
+    1,
+    topBusPadding + maxRow * ROW_H + CARD_H + MARGIN * 2,
+  );
   return { positions, couples, width, height };
 }
