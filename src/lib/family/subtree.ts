@@ -1,5 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
-import { closure, parentsOf } from "./util";
+import { closure, parentsOf, relationsOf } from "./util";
 
 export type DisplayMode = "all" | "direct" | "directAndChildren";
 
@@ -21,35 +21,15 @@ export function computeSubtree(
 
   if (!people[focalId]) return { people: {}, families: {} };
 
-  const parents = new Map<string, string[]>();
-  const children = new Map<string, string[]>();
-  const partners = new Map<string, string[]>();
+  const { parents, children, partners } = relationsOf(data);
   const siblings = new Map<string, string[]>();
-
-  for (const p of Object.values(people)) {
-    parents.set(p.id, []);
-    children.set(p.id, []);
-    partners.set(p.id, []);
-    siblings.set(p.id, []);
-  }
-
+  for (const p of Object.values(people)) siblings.set(p.id, []);
   for (const fam of Object.values(families)) {
     const parentIds = parentsOf(fam);
+    if (parentIds.length !== 0) continue;
     const kids = fam.childrenIds.filter((id) => people[id] !== undefined);
     for (const childId of kids) {
-      for (const pid of parentIds) {
-        parents.get(childId)?.push(pid);
-        children.get(pid)?.push(childId);
-      }
-    }
-    if (parentIds.length === 2) {
-      partners.get(parentIds[0])?.push(parentIds[1]);
-      partners.get(parentIds[1])?.push(parentIds[0]);
-    }
-    if (parentIds.length === 0) {
-      for (const childId of kids) {
-        siblings.get(childId)?.push(...kids.filter((id) => id !== childId));
-      }
+      siblings.get(childId)?.push(...kids.filter((id) => id !== childId));
     }
   }
 

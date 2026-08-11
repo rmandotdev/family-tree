@@ -1,5 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
-import { parentsOf } from "./util";
+import { parentsOf, relationsOf } from "./util";
 
 export const CARD_W = 160;
 export const CARD_H = 90;
@@ -47,21 +47,9 @@ interface Group {
   row: number;
 }
 
-function povPathOf(
-  people: Record<string, Person>,
-  families: Record<string, Family>,
-  pov: string,
-): Set<string> | null {
-  if (!people[pov]) return null;
-  const parents = new Map<string, string[]>();
-  for (const p of Object.values(people)) parents.set(p.id, []);
-  for (const fam of Object.values(families)) {
-    const parentIds = parentsOf(fam);
-    for (const childId of fam.childrenIds) {
-      if (!people[childId]) continue;
-      for (const pid of parentIds) parents.get(childId)?.push(pid);
-    }
-  }
+function povPathOf(data: TreeData, pov: string): Set<string> | null {
+  if (!data.people[pov]) return null;
+  const parents = relationsOf(data).parents;
   const result = new Set<string>();
   const queue = [pov];
   while (queue.length > 0) {
@@ -71,7 +59,7 @@ function povPathOf(
     queue.push(...(parents.get(id) ?? []));
   }
   const ancestors = new Set(result);
-  for (const fam of Object.values(families)) {
+  for (const fam of Object.values(data.families)) {
     const parentIds = parentsOf(fam);
     for (const pid of parentIds) {
       if (!ancestors.has(pid)) continue;
@@ -111,7 +99,7 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
   const groupOf = new Map<string, Group>();
   const assigned = new Set<string>();
 
-  const onPath = pov ? povPathOf(people, families, pov) : null;
+  const onPath = pov ? povPathOf(data, pov) : null;
   const childrenOf = (fam: Family) => {
     const ids = onPath
       ? sortChildrenForPOV(fam.childrenIds, onPath, people)
