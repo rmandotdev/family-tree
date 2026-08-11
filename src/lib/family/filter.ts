@@ -1,4 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
+import { parentsOf } from "./util";
 
 interface Relations {
   parents: Map<string, string[]>;
@@ -17,9 +18,7 @@ function relationsOf(data: TreeData): Relations {
     partners.set(p.id, []);
   }
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     for (const childId of fam.childrenIds) {
       if (!people[childId]) continue;
       for (const pid of parentIds) {
@@ -205,9 +204,7 @@ export function filterCollapsed(
 
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     const keptParents = parentIds.filter((id) => kept.has(id));
     const keptChildren = fam.childrenIds.filter((id) => kept.has(id));
     if (keptParents.length !== parentIds.length) continue;

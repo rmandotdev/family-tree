@@ -1,4 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
+import { parentsOf } from "./util";
 
 export type DisplayMode = "all" | "direct" | "directAndChildren";
 
@@ -60,9 +61,7 @@ export function computeSubtree(
   }
 
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     const kids = fam.childrenIds.filter((id) => people[id] !== undefined);
     for (const childId of kids) {
       for (const pid of parentIds) {
@@ -210,9 +209,7 @@ export function computeSubtree(
 
   const outFamilies: Record<string, Family> = {};
   for (const fam of Object.values(families)) {
-    const parentIds = [fam.husbandId, fam.wifeId].filter(
-      (id) => id !== undefined,
-    );
+    const parentIds = parentsOf(fam);
     if (!parentIds.every((id) => included.has(id))) continue;
 
     outFamilies[fam.id] = fam;
