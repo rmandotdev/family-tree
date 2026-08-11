@@ -245,6 +245,57 @@ describe("computeLayout", () => {
     expect(layout.height).toBe(ROW_H * 2 + CARD_H + MARGIN * 2);
   });
 
+  it("places maternal-side grandparents to the right of paternal-side ones", () => {
+    const g1 = person("g1", "male");
+    const gm1 = person("gm1", "female");
+    const p1 = person("p1", "male");
+    const p2 = person("p2", "female");
+    const c1 = person("c1");
+    const c2 = person("c2");
+    const c3 = person("c3");
+    const m1 = person("m1", "female");
+    const layout = computeLayout(
+      tree(
+        [g1, gm1, p1, p2, c1, c2, c3, m1],
+        [
+          family("f1", g1.id, gm1.id, [p1.id]),
+          family("f2", p1.id, p2.id, [c1.id, c2.id, c3.id]),
+          family("f3", undefined, m1.id, [p2.id]),
+        ],
+      ),
+    );
+
+    expect(pos(layout, m1.id).y).toBe(pos(layout, g1.id).y);
+    expect(pos(layout, m1.id).x).toBeGreaterThan(pos(layout, gm1.id).x);
+  });
+
+  it("keeps a couple on the maternal side to the right of paternal-side grandparents", () => {
+    const g1 = person("g1", "male");
+    const gm1 = person("gm1", "female");
+    const p1 = person("p1", "male");
+    const p2 = person("p2", "female");
+    const c1 = person("c1");
+    const c2 = person("c2");
+    const c3 = person("c3");
+    const f1 = person("f1", "male");
+    const m1 = person("m1", "female");
+    const layout = computeLayout(
+      tree(
+        [g1, gm1, p1, p2, c1, c2, c3, f1, m1],
+        [
+          family("f1", g1.id, gm1.id, [p1.id]),
+          family("f2", p1.id, p2.id, [c1.id, c2.id, c3.id]),
+          family("f3", f1.id, m1.id, [p2.id]),
+        ],
+      ),
+    );
+
+    const paternalX = pos(layout, gm1.id).x;
+    expect(pos(layout, f1.id).y).toBe(pos(layout, g1.id).y);
+    expect(pos(layout, f1.id).x).toBeGreaterThan(paternalX);
+    expect(pos(layout, m1.id).x).toBeGreaterThan(pos(layout, f1.id).x);
+  });
+
   it("aligns a person's parents correctly when their spouse's family branch pushes them deeper", () => {
     const g1 = person("g1", "male");
     const gm1 = person("gm1", "female");

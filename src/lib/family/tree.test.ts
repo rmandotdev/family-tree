@@ -105,6 +105,28 @@ describe("createFamilyTree", () => {
     expect(state.families[famId].childrenIds).toContain(kid.id);
   });
 
+  it("reuses the current family when adding the other parent to a child", () => {
+    const state = makeState();
+    const tree = createFamilyTree(state, () => {});
+    const mary = tree.addPerson(input("Mary", "female"));
+    const mother = tree.addPerson(input("Mother", "female"));
+    const father = tree.addPerson(input("Father", "male"));
+
+    tree.setParents(mary.id, mother.id, undefined);
+    expect(Object.values(state.families)).toHaveLength(1);
+
+    tree.setParents(mary.id, mother.id, father.id);
+
+    const fams = Object.values(state.families);
+    expect(fams).toHaveLength(1);
+    expect(fams[0].husbandId).toBe(father.id);
+    expect(fams[0].wifeId).toBe(mother.id);
+    expect(fams[0].childrenIds).toContain(mary.id);
+    expect(state.people[mary.id].parentFamilyId).toBe(fams[0].id);
+    expect(state.people[father.id].familyIds).toContain(fams[0].id);
+    expect(state.people[mother.id].familyIds).toContain(fams[0].id);
+  });
+
   it("makes the first added person the tree source when the tree is empty", () => {
     const state = makeState();
     const tree = createFamilyTree(state, () => {});

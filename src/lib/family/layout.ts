@@ -135,23 +135,51 @@ export function computeLayout(data: TreeData): LayoutResult {
     ranges.push([lo, hi]);
   }
 
-  function freeCenter(row: number, lo: number, hi: number): number {
+  function freeCenter(
+    row: number,
+    lo: number,
+    hi: number,
+    prefer: "left" | "right" | null = null,
+  ): number {
     const ranges = [...(occupied.get(row) ?? [])].sort((a, b) => a[0] - b[0]);
     if (!ranges.some(([a, b]) => lo < b && hi > a)) return (lo + hi) / 2;
     const w = hi - lo;
-    const target = (lo + hi) / 2;
-    let best = Infinity;
+    const gaps: number[] = [];
     let prevEnd = -Infinity;
     for (const [start, end] of ranges) {
-      if (start - prevEnd >= w) {
-        const mid = start - w + w / 2;
-        if (Math.abs(mid - target) < Math.abs(best - target)) best = mid;
-      }
+      if (start - prevEnd >= w) gaps.push(start - w + w / 2);
       prevEnd = Math.max(prevEnd, end);
     }
-    const mid = prevEnd + w / 2;
-    if (Math.abs(mid - target) < Math.abs(best - target)) best = mid;
+    gaps.push(prevEnd + w / 2);
+    if (prefer === "left") return gaps[0];
+    if (prefer === "right") return gaps[gaps.length - 1];
+    const target = (lo + hi) / 2;
+    let best = Infinity;
+    for (const mid of gaps) {
+      if (Math.abs(mid - target) < Math.abs(best - target)) best = mid;
+    }
     return best === Infinity ? (lo + hi) / 2 : best;
+  }
+
+  function preferDirection(couple: CoupleLayout): "left" | "right" | null {
+    let left = 0;
+    let right = 0;
+    for (const child of childCouples.get(couple) ?? []) {
+      if (child.parents.length !== 2) continue;
+      const [husbandId, wifeId] = child.parents;
+      const coParents = parentCouples.get(child) ?? [];
+      const paternal = coParents.some(
+        (p) => p !== couple && p.children.includes(husbandId),
+      );
+      const maternal = coParents.some(
+        (p) => p !== couple && p.children.includes(wifeId),
+      );
+      if (couple.children.includes(husbandId) && maternal) left++;
+      if (couple.children.includes(wifeId) && paternal) right++;
+    }
+    if (left > right) return "left";
+    if (right > left) return "right";
+    return null;
   }
 
   function layoutCouple(couple: CoupleLayout) {
@@ -176,8 +204,9 @@ export function computeLayout(data: TreeData): LayoutResult {
         ? coupleOf.get(couple.children[couple.children.length - 1])
         : first;
     if (first && last) {
+      const dir = preferDirection(couple);
       if (n === 1 && first === last && first.parents.length === 2) {
-        couple.col = first.col - 0.5;
+        couple.col = dir === "right" ? first.col + 0.5 : first.col - 0.5;
       } else {
         couple.col = snapCol((first.col + last.col) / 2, n);
       }
@@ -187,7 +216,12 @@ export function computeLayout(data: TreeData): LayoutResult {
       cursor += n;
     }
 
-    couple.col = freeCenter(couple.row, couple.col - n / 2, couple.col + n / 2);
+    couple.col = freeCenter(
+      couple.row,
+      couple.col - n / 2,
+      couple.col + n / 2,
+      preferDirection(couple),
+    );
     record(couple.row, couple.col - n / 2, couple.col + n / 2);
   }
 

@@ -235,6 +235,19 @@ export function createFamilyTree(state: FamilyTreeState, persist: () => void) {
     let fam = Object.values(families).find(
       (f) => f.husbandId === validFather && f.wifeId === validMother,
     );
+    if (!fam && current) {
+      const fatherFits =
+        current.husbandId === validFather ||
+        (current.husbandId === undefined && validFather !== undefined);
+      const motherFits =
+        current.wifeId === validMother ||
+        (current.wifeId === undefined && validMother !== undefined);
+      if (fatherFits && motherFits) {
+        fam = current;
+        fam.husbandId = validFather;
+        fam.wifeId = validMother;
+      }
+    }
     if (!fam) {
       fam = {
         id: crypto.randomUUID(),
