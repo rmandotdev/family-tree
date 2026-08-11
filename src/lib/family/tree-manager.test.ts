@@ -86,7 +86,7 @@ describe("createTreeManager", () => {
 
     expect(manager.activeTreeId).not.toBeNull();
     expect(manager.metas).toHaveLength(1);
-    expect(manager.metas[0].name).toBe("My family");
+    expect(manager.metas[0].name).toBe("Demo Tree");
     expect(Object.keys(state.data.people).length).toBeGreaterThan(0);
     expect(storage.index).toHaveLength(1);
     expect(storage.data.size).toBe(1);

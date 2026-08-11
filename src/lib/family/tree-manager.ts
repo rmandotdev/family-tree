@@ -100,7 +100,7 @@ export function createTreeManager(
     } else {
       const id = crypto.randomUUID();
       const demo = createDemoTree();
-      metas.push({ id, name: "My family", createdAt: Date.now() });
+      metas.push({ id, name: "Demo Tree", createdAt: Date.now() });
       storage.saveData(id, demo);
       storage.saveIndex(metas);
       activeTreeId.value = id;
