@@ -27,7 +27,7 @@
     "@sveltejs/vite-plugin-svelte": "7.3.0",
     "@tailwindcss/vite": "4.3.3",
     "knip": "6.32.2",
-    "svelte": "5.56.9",
+    "svelte": "5.56.10",
     "tailwindcss": "4.3.3",
     "typescript": "7.0.2",
     "vite": "8.2.2",
