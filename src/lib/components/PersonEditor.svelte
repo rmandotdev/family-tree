@@ -22,6 +22,12 @@ let {
 
 const isAddingParent = $derived(preset?.parentOf !== undefined);
 const isSibling = $derived(preset?.siblingOf !== undefined);
+const showPartner = $derived(
+  person !== null || preset?.partnerId !== undefined,
+);
+const showParents = $derived(
+  !isAddingParent && !isSibling && (person !== null || preset !== null),
+);
 
 const title = $derived(
   person
@@ -181,7 +187,7 @@ function remove() {
       </label>
     </div>
 
-    {#if !isAddingParent}
+    {#if showPartner}
       <label class="block text-sm">
         <span class="font-medium text-stone-700">Partner</span>
         <select
@@ -197,8 +203,10 @@ function remove() {
           {/each}
         </select>
       </label>
+    {/if}
 
-      <div class="grid grid-cols-2 gap-3" class:hidden={isSibling}>
+    {#if showParents}
+      <div class="grid grid-cols-2 gap-3">
         <label class="block text-sm">
           <span class="font-medium text-stone-700">Mother</span>
           <select
