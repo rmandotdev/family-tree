@@ -236,28 +236,24 @@ function goBack() {
     </div>
 
     <div class="flex items-center gap-2">
-    <div
-      class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
-    >
-      {#each ([
-        { value: "all", label: "All relatives" },
-        { value: "direct", label: "Direct relatives" },
-        { value: "directAndChildren", label: "Direct + their children" },
-      ] as const) as item (item.value)}
-        <button
-          class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-          class:bg-stone-900={mode === item.value}
-          class:text-white={mode === item.value}
-          class:bg-stone-100={mode !== item.value}
-          class:text-stone-600={mode !== item.value}
-          class:hover:bg-stone-200={mode !== item.value}
-          type="button"
-          onclick={() => (mode = item.value)}
-        >
-          {item.label}
-        </button>
-      {/each}
-    </div>
+      <div
+        class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
+      >
+        {#each [{ value: "all", label: "All relatives" }, { value: "direct", label: "Direct relatives" }, { value: "directAndChildren", label: "Direct + their children" }] as const as item (item.value)}
+          <button
+            class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+            class:bg-stone-900={mode === item.value}
+            class:text-white={mode === item.value}
+            class:bg-stone-100={mode !== item.value}
+            class:text-stone-600={mode !== item.value}
+            class:hover:bg-stone-200={mode !== item.value}
+            type="button"
+            onclick={() => (mode = item.value)}
+          >
+            {item.label}
+          </button>
+        {/each}
+      </div>
 
       <button
         class="flex cursor-pointer items-center rounded-lg border border-stone-300 bg-white p-2 text-stone-700 shadow-sm hover:bg-stone-50"
@@ -306,7 +302,10 @@ function goBack() {
       {#each visibleList as person (person.id)}
         {@const pos = layout.positions.get(person.id)}
         {@const personActions = actions.get(person.id)}
-        {@const parentsHidden = (personActions?.parentsHiddenByDefault ?? false) ? !expandedParents.has(person.id) : collapsedParents.has(person.id)}
+        {@const parentsHidden =
+          (personActions?.parentsHiddenByDefault ?? false)
+            ? !expandedParents.has(person.id)
+            : collapsedParents.has(person.id)}
         {#if pos}
           <PersonCard
             {person}
