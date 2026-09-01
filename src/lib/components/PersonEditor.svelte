@@ -22,12 +22,8 @@ let {
 
 const isAddingParent = $derived(preset?.parentOf !== undefined);
 const isSibling = $derived(preset?.siblingOf !== undefined);
-const showPartner = $derived(
-  person !== null || preset?.partnerId !== undefined,
-);
-const showParents = $derived(
-  !isAddingParent && !isSibling && (person !== null || preset !== null),
-);
+const showPartner = $derived(preset?.partnerId !== undefined);
+const showParents = $derived(!isAddingParent && !isSibling && preset !== null);
 
 const title = $derived(
   person
