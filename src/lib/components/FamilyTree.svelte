@@ -13,6 +13,7 @@ import type { CardAction } from "./PersonCard.svelte";
 import PersonCard from "./PersonCard.svelte";
 import PersonEditor from "./PersonEditor.svelte";
 import { canvas } from "./pan.svelte";
+import SearchModal from "./SearchModal.svelte";
 import TreeSwitcher from "./TreeSwitcher.svelte";
 
 interface PovCollapseState {
@@ -38,6 +39,7 @@ let recenterKey = $state(0);
 let lastTreeId = $state(activeTree);
 let editing = $state<{ id: string | null } | null>(null);
 let addRelativeTo = $state<string | null>(null);
+let searchOpen = $state(false);
 let addRelativePreset = $state<{
   partnerId?: string;
   motherId?: string;
@@ -106,6 +108,7 @@ $effect(() => {
   editing = null;
   addRelativeTo = null;
   addRelativePreset = null;
+  searchOpen = false;
   recenterKey += 1;
 });
 
@@ -167,6 +170,12 @@ function handleRelativeSelect(relation: RelativeRelation) {
   if (id) openAddRelative(id, relation);
 }
 
+function handleSearchSelect(personId: string) {
+  searchOpen = false;
+  pov = { focalId: personId };
+  recenterKey += 1;
+}
+
 function handleAction(personId: string, action: CardAction) {
   openMenuId = null;
   switch (action) {
@@ -225,27 +234,48 @@ function goBack() {
     <div class="flex items-center">
       <TreeSwitcher />
     </div>
-    <div
-      class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
-    >
-      {#each ([
-        { value: "all", label: "All relatives" },
-        { value: "direct", label: "Direct relatives" },
-        { value: "directAndChildren", label: "Direct + their children" },
-      ] as const) as item (item.value)}
-        <button
-          class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-          class:bg-stone-900={mode === item.value}
-          class:text-white={mode === item.value}
-          class:bg-stone-100={mode !== item.value}
-          class:text-stone-600={mode !== item.value}
-          class:hover:bg-stone-200={mode !== item.value}
-          type="button"
-          onclick={() => (mode = item.value)}
+
+    <div class="flex items-center gap-2">
+      <div
+        class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
+      >
+        {#each [{ value: "all", label: "All relatives" }, { value: "direct", label: "Direct relatives" }, { value: "directAndChildren", label: "Direct + their children" }] as const as item (item.value)}
+          <button
+            class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+            class:bg-stone-900={mode === item.value}
+            class:text-white={mode === item.value}
+            class:bg-stone-100={mode !== item.value}
+            class:text-stone-600={mode !== item.value}
+            class:hover:bg-stone-200={mode !== item.value}
+            type="button"
+            onclick={() => (mode = item.value)}
+          >
+            {item.label}
+          </button>
+        {/each}
+      </div>
+
+      <button
+        class="flex cursor-pointer items-center rounded-lg border border-stone-300 bg-white p-2 text-stone-700 shadow-sm hover:bg-stone-50"
+        type="button"
+        onclick={() => (searchOpen = true)}
+        aria-label="Search people"
+        title="Search people"
+      >
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
         >
-          {item.label}
-        </button>
-      {/each}
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.3-4.3"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -272,7 +302,10 @@ function goBack() {
       {#each visibleList as person (person.id)}
         {@const pos = layout.positions.get(person.id)}
         {@const personActions = actions.get(person.id)}
-        {@const parentsHidden = (personActions?.parentsHiddenByDefault ?? false) ? !expandedParents.has(person.id) : collapsedParents.has(person.id)}
+        {@const parentsHidden =
+          (personActions?.parentsHiddenByDefault ?? false)
+            ? !expandedParents.has(person.id)
+            : collapsedParents.has(person.id)}
         {#if pos}
           <PersonCard
             {person}
@@ -343,6 +376,13 @@ function goBack() {
       person={addRelativeTarget}
       onClose={() => (addRelativeTo = null)}
       onSelect={handleRelativeSelect}
+    />
+  {/if}
+
+  {#if searchOpen}
+    <SearchModal
+      onClose={() => (searchOpen = false)}
+      onSelect={handleSearchSelect}
     />
   {/if}
 </div>
