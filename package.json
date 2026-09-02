@@ -16,7 +16,7 @@
     "wrangler:deploy": "wrangler deploy"
   },
   "overrides": {
-    "@oxc-project/types": "0.147.0",
+    "@oxc-project/types": "0.148.0",
     "lightningcss": "1.33.0"
   },
   "devDependencies": {
