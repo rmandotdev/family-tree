@@ -23,7 +23,6 @@ let {
 const isAddingParent = $derived(preset?.parentOf !== undefined);
 const isSibling = $derived(preset?.siblingOf !== undefined);
 const isAddingPartner = $derived(preset?.partnerId !== undefined);
-const showPartner = $derived(false);
 const showParents = $derived(
   !isAddingPartner && !isAddingParent && !isSibling && preset !== null,
 );
@@ -55,9 +54,6 @@ let fatherId = $state(
     ? (tree.families[person.parentFamilyId]?.husbandId ?? "")
     : (preset?.fatherId ?? ""),
 );
-let partnerId = $state(
-  person ? (tree.partnerOf(person.id) ?? "") : (preset?.partnerId ?? ""),
-);
 let error = $state("");
 
 const motherOptions = $derived(
@@ -69,15 +65,6 @@ const motherOptions = $derived(
 const fatherOptions = $derived(
   tree.list.filter(
     (p) => p.gender === "male" && tree.canBeParent(person?.id ?? null, p.id),
-  ),
-);
-
-const partnerOptions = $derived(
-  tree.list.filter(
-    (p) =>
-      p.id !== person?.id &&
-      tree.canBePartner(person?.id ?? null, p.id) &&
-      (tree.partnerOf(p.id) === null || tree.partnerOf(p.id) === person?.id),
   ),
 );
 
@@ -116,7 +103,6 @@ function save() {
   const target = person ?? tree.addPerson(input);
   if (person) tree.updatePerson(target.id, input);
   tree.setParents(target.id, motherId || undefined, fatherId || undefined);
-  tree.setPartner(target.id, partnerId || null);
   onClose();
 }
 
@@ -185,24 +171,6 @@ function remove() {
         />
       </label>
     </div>
-
-    {#if showPartner}
-      <label class="block text-sm">
-        <span class="font-medium text-stone-700">Partner</span>
-        <select
-          class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none"
-          bind:value={partnerId}
-        >
-          <option value="">—</option>
-          {#each partnerOptions as option (option.id)}
-            <option value={option.id}>
-              {option.firstName}
-              {option.lastName}
-            </option>
-          {/each}
-        </select>
-      </label>
-    {/if}
 
     {#if showParents}
       <div class="grid grid-cols-2 gap-3">
