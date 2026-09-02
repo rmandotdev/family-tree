@@ -22,8 +22,11 @@ let {
 
 const isAddingParent = $derived(preset?.parentOf !== undefined);
 const isSibling = $derived(preset?.siblingOf !== undefined);
-const showPartner = $derived(preset?.partnerId !== undefined);
-const showParents = $derived(!isAddingParent && !isSibling && preset !== null);
+const isAddingPartner = $derived(preset?.partnerId !== undefined);
+const showPartner = $derived(false);
+const showParents = $derived(
+  !isAddingPartner && !isAddingParent && !isSibling && preset !== null,
+);
 
 const title = $derived(
   person
@@ -158,7 +161,7 @@ function remove() {
         <select
           class="mt-1 w-full rounded-md border border-stone-300 px-2 py-1.5 text-sm focus:border-sky-500 focus:outline-none disabled:bg-stone-100 disabled:text-stone-500"
           bind:value={gender}
-          disabled={isAddingParent}
+          disabled={isAddingParent || isAddingPartner}
         >
           <option value="male">Male</option>
           <option value="female">Female</option>
