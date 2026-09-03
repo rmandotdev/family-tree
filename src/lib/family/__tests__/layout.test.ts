@@ -454,4 +454,175 @@ describe("computeGrid with a point of view", () => {
     expect(card(grid, "dad").col).toBeLessThan(card(grid, "mom").col);
     expect(card(grid, "mom").col).toBeLessThan(card(grid, "aunt").col);
   });
+
+  it("places a father's sibling to the left of the father when parents are absent", () => {
+    const me = person("me");
+    const dad = person("dad", "male");
+    const mom = person("mom", "female");
+    const aunt = person("aunt", "female");
+
+    const data = tree(
+      [me, dad, mom, aunt],
+      [
+        family("f1", dad.id, mom.id, [me.id]),
+        family("f2", undefined, undefined, [dad.id, aunt.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, me.id);
+
+    expect(card(grid, "aunt").col).toBeLessThan(card(grid, "dad").col);
+    expect(card(grid, "dad").col + 1).toBe(card(grid, "mom").col);
+  });
+
+  it("places a mother's sibling to the right of the mother when parents are absent", () => {
+    const me = person("me");
+    const dad = person("dad", "male");
+    const mom = person("mom", "female");
+    const aunt = person("aunt", "female");
+
+    const data = tree(
+      [me, dad, mom, aunt],
+      [
+        family("g1", dad.id, mom.id, [me.id]),
+        family("g2", undefined, undefined, [mom.id, aunt.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, me.id);
+
+    expect(card(grid, "aunt").col).toBeGreaterThan(card(grid, "mom").col);
+    expect(card(grid, "dad").col + 1).toBe(card(grid, "mom").col);
+  });
+
+  it("keeps paternal great-grandparents as a left block with granddad's parents left of grandmom's", () => {
+    const me = person("me");
+    const dad = person("dad", "male");
+    const mom = person("mom", "female");
+    const gd = person("gd", "male");
+    const gmd = person("gmd", "female");
+    const gm = person("gm", "male");
+    const gmm = person("gmm", "female");
+    const ggd1 = person("ggd1", "male");
+    const ggmd1 = person("ggmd1", "female");
+    const ggd2 = person("ggd2", "male");
+    const ggmd2 = person("ggmd2", "female");
+    const ggm1 = person("ggm1", "male");
+    const ggmm1 = person("ggmm1", "female");
+    const ggm2 = person("ggm2", "male");
+    const ggmm2 = person("ggmm2", "female");
+
+    const data = tree(
+      [
+        me,
+        dad,
+        mom,
+        gd,
+        gmd,
+        gm,
+        gmm,
+        ggd1,
+        ggmd1,
+        ggd2,
+        ggmd2,
+        ggm1,
+        ggmm1,
+        ggm2,
+        ggmm2,
+      ],
+      [
+        family("f1", dad.id, mom.id, [me.id]),
+        family("f2", gd.id, gmd.id, [dad.id]),
+        family("f3", gm.id, gmm.id, [mom.id]),
+        family("f4", ggd1.id, ggmd1.id, [gd.id]),
+        family("f5", ggd2.id, ggmd2.id, [gmd.id]),
+        family("f6", ggm1.id, ggmm1.id, [gm.id]),
+        family("f7", ggm2.id, ggmm2.id, [gmm.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, me.id);
+
+    // Dad's four great-grandparents form a contiguous left block.
+    const row0 = [
+      ggd1.id,
+      ggmd1.id,
+      ggd2.id,
+      ggmd2.id,
+      ggm1.id,
+      ggmm1.id,
+      ggm2.id,
+      ggmm2.id,
+    ]
+      .map((id) => card(grid, id).col)
+      .sort((x, y) => x - y);
+    expect(row0).toEqual([0, 1, 2, 3, 4, 5, 6, 7]);
+
+    // Within dad's block, granddad's parents sit left of grandmom's.
+    expect(card(grid, "ggd2").col).toBeGreaterThan(card(grid, "ggd1").col);
+    expect(card(grid, "ggmd2").col).toBeGreaterThan(card(grid, "ggmd1").col);
+
+    // Dad and mom are centered between both grandparent pairs.
+    expect(card(grid, "dad").col + 1).toBe(card(grid, "mom").col);
+    expect(card(grid, "dad").col).toBeGreaterThan(card(grid, "gd").col);
+    expect(card(grid, "mom").col).toBeLessThan(card(grid, "gm").col);
+
+    // Mom's great-grandparents stay to the right of dad's.
+    expect(card(grid, "ggm1").col).toBeGreaterThan(card(grid, "ggd2").col);
+
+    // The focal person is horizontally centered.
+    expect(card(grid, "me").col).toBe(3);
+  });
+
+  function completeTree(gens: number): {
+    data: ReturnType<typeof tree>;
+    me: string;
+    dad: string;
+    mom: string;
+    topRow: string[];
+  } {
+    const people = [person("p0_0")];
+    const families = [];
+    for (let level = 0; level < gens; level++) {
+      const count = 2 ** level;
+      for (let j = 0; j < count; j++) {
+        const child = `p${level}_${j}`;
+        const h = `p${level + 1}_${2 * j}`;
+        const w = `p${level + 1}_${2 * j + 1}`;
+        people.push(person(h, "male"), person(w, "female"));
+        families.push(family(`f${level}_${j}`, h, w, [child]));
+      }
+    }
+    const topRow = Array.from({ length: 2 ** gens }, (_, j) => `p${gens}_${j}`);
+    return {
+      data: tree(people, families),
+      me: "p0_0",
+      dad: "p1_0",
+      mom: "p1_1",
+      topRow,
+    };
+  }
+
+  it.each([4, 5, 6, 7])(
+    "keeps a complete %i-generation tree symmetric and centered",
+    (gens) => {
+      const { data, me, dad, mom, topRow } = completeTree(gens);
+      const grid = computeGrid(data, me);
+
+      // Every ancestor survives, with no card lost or overlapping another.
+      expect(grid.cards.size).toBe(2 ** (gens + 1) - 1);
+
+      // The focal person sits under their father, just left of the tree's center.
+      expect(card(grid, me).col).toBe(2 ** (gens - 1) - 1);
+
+      // The top (outermost) row is a contiguous block starting at column 0.
+      const row0 = topRow.map((id) => card(grid, id).col);
+      expect(Math.min(...row0)).toBe(0);
+      expect(Math.max(...row0)).toBe(2 ** gens - 1);
+      expect(new Set(row0).size).toBe(row0.length);
+
+      // Paternal side stays to the left of the maternal side.
+      expect(card(grid, dad).col).toBeLessThan(card(grid, mom).col);
+    },
+  );
 });

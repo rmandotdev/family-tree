@@ -1,5 +1,5 @@
 import type { Family, Person, TreeData } from "./types";
-import { parentsOf, relationsOf } from "./util";
+import { closure, parentsOf, relationsOf } from "./util";
 
 export const CARD_W = 160;
 export const CARD_H = 90;
@@ -106,6 +106,38 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
       : fam.childrenIds;
     return ids.filter((id) => byId.has(id));
   };
+
+  const relations = relationsOf(data);
+  const paternalAncestors = new Set<string>();
+  const maternalAncestors = new Set<string>();
+  if (pov && people[pov]) {
+    const focalParents = relations.parents.get(pov) ?? [];
+    const dadId =
+      focalParents.find((id) => people[id]?.gender === "male") ??
+      focalParents[0] ??
+      "";
+    const momId =
+      focalParents.find((id) => people[id]?.gender === "female") ??
+      focalParents[1] ??
+      "";
+    if (dadId && people[dadId]) {
+      for (const a of closure([dadId], relations.parents)) {
+        if (a !== dadId) paternalAncestors.add(a);
+      }
+    }
+    if (momId && people[momId]) {
+      for (const a of closure([momId], relations.parents)) {
+        if (a !== momId) maternalAncestors.add(a);
+      }
+    }
+  }
+  function groupSide(group: Group): "left" | "right" | null {
+    for (const id of group.members) {
+      if (paternalAncestors.has(id)) return "left";
+      if (maternalAncestors.has(id)) return "right";
+    }
+    return null;
+  }
 
   for (const fam of Object.values(families)) {
     const members = [fam.husbandId, fam.wifeId].filter(
@@ -290,6 +322,35 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     return null;
   }
 
+  const parentlessFamilies = Object.values(families).filter(
+    (f) => f.husbandId === undefined && f.wifeId === undefined,
+  );
+
+  function flankSide(anchor: Group, mid: string): "left" | "right" | null {
+    const fam = parentlessFamilies.find(
+      (f) =>
+        f.childrenIds.includes(mid) &&
+        anchor.members.some((m) => f.childrenIds.includes(m)),
+    );
+    if (!fam) return null;
+    const [husbandId, wifeId] = anchor.members;
+    if (husbandId !== undefined && fam.childrenIds.includes(husbandId))
+      return "left";
+    if (wifeId !== undefined && fam.childrenIds.includes(wifeId))
+      return "right";
+    return null;
+  }
+
+  function siblingAnchor(root: Group): Group | null {
+    if (root.children.length !== 0) return null;
+    const union = groupMembers.get(find(root)) ?? [];
+    return (
+      union.find(
+        (g) => g !== root && g.children.length > 0 && g.members.length === 2,
+      ) ?? null
+    );
+  }
+
   function layoutGroup(group: Group) {
     if (visited.has(group)) return;
     visited.add(group);
@@ -333,7 +394,126 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     record(group.row, group.col - n / 2, group.col + n / 2);
   }
 
-  for (const root of roots) layoutGroup(root);
+  const rootFlanks = new Map<
+    Group,
+    { anchor: Group; side: "left" | "right" }
+  >();
+  for (const root of roots) {
+    if (root.children.length !== 0) continue;
+    const anchor = siblingAnchor(root);
+    const side = anchor ? flankSide(anchor, root.members[0]) : null;
+    if (anchor && side) rootFlanks.set(root, { anchor, side });
+  }
+
+  for (const root of roots) {
+    if (visited.has(root)) continue;
+    if (rootFlanks.has(root)) continue;
+    layoutGroup(root);
+  }
+
+  function recenterTopDown() {
+    occupied.clear();
+    const flankIds = new Set(rootFlanks.keys());
+
+    const order: Group[] = [];
+    const seen = new Set<Group>();
+    const visit = (g: Group) => {
+      if (seen.has(g)) return;
+      seen.add(g);
+      for (const p of parentGroups.get(g) ?? []) visit(p);
+      order.push(g);
+    };
+    for (const g of groups) visit(g);
+
+    const nonFlankRoots = roots.filter((r) => !flankIds.has(r));
+    nonFlankRoots.sort((a, b) => {
+      const rank = (g: Group) =>
+        groupSide(g) === "left" ? 0 : groupSide(g) === "right" ? 2 : 1;
+      return rank(a) - rank(b);
+    });
+
+    const placed = new Set<Group>();
+    let x = 0;
+    for (const g of nonFlankRoots) {
+      const n = cols(g);
+      g.col = snapCol(n === 1 ? x + 0.5 : x + n / 2, n);
+      record(g.row, g.col - n / 2, g.col + n / 2);
+      x += n;
+      placed.add(g);
+    }
+
+    const placeBlock = (g: Group) => {
+      if (placed.has(g)) return;
+      const parents = parentGroups.get(g) ?? [];
+      const row = g.row;
+
+      const sameParentSet = (s: Group) => {
+        const sp = parentGroups.get(s) ?? [];
+        if (sp.length !== parents.length) return false;
+        return sp.every((p) => parents.includes(p));
+      };
+
+      const block = groups.filter(
+        (s) => !placed.has(s) && s.row === row && sameParentSet(s),
+      );
+
+      const primary = parents[0];
+      if (parents.length === 1 && primary) {
+        const childOrder = childGroups.get(primary) ?? [];
+        block.sort((x, y) => childOrder.indexOf(x) - childOrder.indexOf(y));
+      }
+
+      const blockWidth = block.reduce((acc, s) => acc + cols(s), 0);
+
+      let left: number;
+      if (parents.length === 0) {
+        left = x;
+        x += blockWidth;
+      } else if (parents.length >= 2) {
+        const sum = parents.reduce((acc, p) => acc + (p as Group).col, 0);
+        left = sum / parents.length - blockWidth / 2;
+      } else {
+        const P = parents[0] as Group;
+        left = P.col - cols(P) / 2;
+      }
+
+      let offset = 0;
+      for (const s of block) {
+        const n = cols(s);
+        const center = left + offset + n / 2;
+        s.col = snapCol(
+          freeCenter(row, center - n / 2, center + n / 2, null),
+          n,
+        );
+        record(row, s.col - n / 2, s.col + n / 2);
+        placed.add(s);
+        offset += n;
+      }
+    };
+
+    for (const g of order) if (!flankIds.has(g)) placeBlock(g);
+  }
+
+  function applyRootFlanks() {
+    const leftCount = new Map<Group, number>();
+    const rightCount = new Map<Group, number>();
+    for (const [root, { anchor, side }] of rootFlanks) {
+      const n = cols(root);
+      if (side === "left") {
+        const k = leftCount.get(anchor) ?? 0;
+        leftCount.set(anchor, k + 1);
+        root.col = anchor.col - anchor.members.length / 2 - n / 2 - k;
+      } else {
+        const k = rightCount.get(anchor) ?? 0;
+        rightCount.set(anchor, k + 1);
+        root.col = anchor.col + anchor.members.length / 2 + n / 2 + k;
+      }
+      record(root.row, root.col - n / 2, root.col + n / 2);
+    }
+  }
+
+  recenterTopDown();
+  applyRootFlanks();
 
   let minLeft = 0;
   for (const group of groups) {
