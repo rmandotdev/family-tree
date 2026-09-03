@@ -49,24 +49,16 @@ interface Group {
 
 function povPathOf(data: TreeData, pov: string): Set<string> | null {
   if (!data.people[pov]) return null;
-  const parents = relationsOf(data).parents;
-  const result = new Set<string>();
-  const queue = [pov];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(parents.get(id) ?? []));
-  }
-  const ancestors = new Set(result);
+  const relations = relationsOf(data);
+  const ancestors = closure([pov], relations.parents);
   for (const fam of Object.values(data.families)) {
     const parentIds = parentsOf(fam);
     for (const pid of parentIds) {
       if (!ancestors.has(pid)) continue;
-      for (const other of parentIds) if (other !== pid) result.add(other);
+      for (const other of parentIds) if (other !== pid) ancestors.add(other);
     }
   }
-  return result;
+  return ancestors;
 }
 
 function sortChildrenForPOV(
@@ -294,11 +286,11 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     if (prefer === "left") return gaps[0];
     if (prefer === "right") return gaps[gaps.length - 1];
     const target = (lo + hi) / 2;
-    let best = Infinity;
+    let best = gaps[0];
     for (const mid of gaps) {
       if (Math.abs(mid - target) < Math.abs(best - target)) best = mid;
     }
-    return best === Infinity ? (lo + hi) / 2 : best;
+    return best;
   }
 
   function preferDirection(group: Group): "left" | "right" | null {
