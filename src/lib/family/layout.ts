@@ -49,24 +49,16 @@ interface Group {
 
 function povPathOf(data: TreeData, pov: string): Set<string> | null {
   if (!data.people[pov]) return null;
-  const parents = relationsOf(data).parents;
-  const result = new Set<string>();
-  const queue = [pov];
-  while (queue.length > 0) {
-    const id = queue.pop();
-    if (id === undefined || result.has(id)) continue;
-    result.add(id);
-    queue.push(...(parents.get(id) ?? []));
-  }
-  const ancestors = new Set(result);
+  const relations = relationsOf(data);
+  const ancestors = closure([pov], relations.parents);
   for (const fam of Object.values(data.families)) {
     const parentIds = parentsOf(fam);
     for (const pid of parentIds) {
       if (!ancestors.has(pid)) continue;
-      for (const other of parentIds) if (other !== pid) result.add(other);
+      for (const other of parentIds) if (other !== pid) ancestors.add(other);
     }
   }
-  return result;
+  return ancestors;
 }
 
 function sortChildrenForPOV(
@@ -74,20 +66,11 @@ function sortChildrenForPOV(
   onPath: Set<string>,
   people: Record<string, Person>,
 ): string[] {
-  return [...childrenIds].sort((aId, bId) => {
-    const aIsOnPath = onPath.has(aId);
-    const bIsOnPath = onPath.has(bId);
-
-    const aPerson = people[aId];
-    const bPerson = people[bId];
-
-    const getPriority = (isOnPath: boolean, person?: Person) => {
-      if (!isOnPath) return 1;
-      return person?.gender === "female" ? 0 : 2;
-    };
-
-    return getPriority(aIsOnPath, aPerson) - getPriority(bIsOnPath, bPerson);
-  });
+  const rank = (id: string): number => {
+    if (!onPath.has(id)) return 1;
+    return people[id]?.gender === "female" ? 0 : 2;
+  };
+  return [...childrenIds].sort((aId, bId) => rank(aId) - rank(bId));
 }
 
 export function computeGrid(data: TreeData, pov?: string): GridLayout {
@@ -108,6 +91,11 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
   };
 
   const relations = relationsOf(data);
+  const ancestorsOf = (id: string) => {
+    const set = closure([id], relations.parents);
+    set.delete(id);
+    return set;
+  };
   const paternalAncestors = new Set<string>();
   const maternalAncestors = new Set<string>();
   if (pov && people[pov]) {
@@ -121,14 +109,10 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
       focalParents[1] ??
       "";
     if (dadId && people[dadId]) {
-      for (const a of closure([dadId], relations.parents)) {
-        if (a !== dadId) paternalAncestors.add(a);
-      }
+      for (const a of ancestorsOf(dadId)) paternalAncestors.add(a);
     }
     if (momId && people[momId]) {
-      for (const a of closure([momId], relations.parents)) {
-        if (a !== momId) maternalAncestors.add(a);
-      }
+      for (const a of ancestorsOf(momId)) maternalAncestors.add(a);
     }
   }
   function groupSide(group: Group): "left" | "right" | null {
@@ -294,11 +278,25 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     if (prefer === "left") return gaps[0];
     if (prefer === "right") return gaps[gaps.length - 1];
     const target = (lo + hi) / 2;
-    let best = Infinity;
+    let best = gaps[0];
     for (const mid of gaps) {
       if (Math.abs(mid - target) < Math.abs(best - target)) best = mid;
     }
-    return best === Infinity ? (lo + hi) / 2 : best;
+    return best;
+  }
+
+  function placeInRow(
+    group: Group,
+    row: number,
+    center: number,
+    prefer: "left" | "right" | null = null,
+  ) {
+    const n = cols(group);
+    group.col = snapCol(
+      freeCenter(row, center - n / 2, center + n / 2, prefer),
+      n,
+    );
+    record(row, group.col - n / 2, group.col + n / 2);
   }
 
   function preferDirection(group: Group): "left" | "right" | null {
@@ -372,8 +370,8 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
       group.children.length > 1
         ? groupOf.get(group.children[group.children.length - 1])
         : first;
+    const dir = preferDirection(group);
     if (first && last) {
-      const dir = preferDirection(group);
       if (n === 1 && first === last && first.members.length === 2) {
         group.col = dir === "right" ? first.col + 0.5 : first.col - 0.5;
       } else {
@@ -385,13 +383,7 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
       cursor += n;
     }
 
-    group.col = freeCenter(
-      group.row,
-      group.col - n / 2,
-      group.col + n / 2,
-      preferDirection(group),
-    );
-    record(group.row, group.col - n / 2, group.col + n / 2);
+    placeInRow(group, group.row, group.col, dir);
   }
 
   const rootFlanks = new Map<
@@ -490,12 +482,7 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
       let offset = 0;
       for (const s of block) {
         const n = cols(s);
-        const center = left + offset + n / 2;
-        s.col = snapCol(
-          freeCenter(row, center - n / 2, center + n / 2, null),
-          n,
-        );
-        record(row, s.col - n / 2, s.col + n / 2);
+        placeInRow(s, row, left + offset + n / 2);
         placed.add(s);
         offset += n;
       }
@@ -524,10 +511,7 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     for (const [row, caps] of capByRow) {
       caps.sort((a, b) => (capTargets.get(a) ?? 0) - (capTargets.get(b) ?? 0));
       for (const g of caps) {
-        const target = capTargets.get(g) ?? 0;
-        const n = cols(g);
-        g.col = snapCol(freeCenter(row, target, target + n, null), n);
-        record(row, g.col - n / 2, g.col + n / 2);
+        placeInRow(g, row, (capTargets.get(g) ?? 0) + cols(g) / 2);
         placed.add(g);
       }
     }
