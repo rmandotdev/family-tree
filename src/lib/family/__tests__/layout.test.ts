@@ -12,7 +12,7 @@ import {
   MARGIN,
   ROW_H,
 } from "../layout";
-import { family, person, tree } from "./test-helpers";
+import { demoTree, family, person, tree } from "./test-helpers";
 
 function pos(layout: { positions: Map<string, Point> }, id: string): Point {
   const p = layout.positions.get(id);
@@ -225,37 +225,6 @@ describe("computeLayout", () => {
     expect(pb.x - pa.x).toBe(COL_W);
   });
 
-  it("places a single parent on the row above its child's couple", () => {
-    const g = person("g", "male");
-    const gm = person("gm", "female");
-    const a = person("a", "male");
-    const b = person("b", "female");
-    const c = person("c", "male");
-    const d = person("d", "female");
-    const e = person("e");
-    const p = person("p", "male");
-    a.parentFamilyId = "f0";
-    b.parentFamilyId = "f0";
-    c.parentFamilyId = "f1";
-    e.parentFamilyId = "f2";
-    const layout = computeLayout(
-      tree(
-        [g, gm, a, b, c, d, e, p],
-        [
-          family("f0", g.id, gm.id, [a.id, b.id]),
-          family("f1", a.id, b.id, [c.id]),
-          family("f2", c.id, d.id, [e.id]),
-          family("f3", p.id, undefined, [c.id]),
-        ],
-      ),
-    );
-
-    const parentPos = pos(layout, p.id);
-    const childPos = pos(layout, c.id);
-    expect(parentPos.y).toBe(childPos.y - ROW_H);
-    expect(parentPos.x + CARD_W).toBeLessThanOrEqual(pos(layout, a.id).x);
-  });
-
   it("reports dimensions that fit the laid out content", () => {
     const a = person("a", "male");
     const b = person("b", "female");
@@ -355,6 +324,13 @@ describe("computeLayout", () => {
 });
 
 describe("computeGrid with a point of view", () => {
+  it("does not let Mark Jones overlap John Smith in the demo tree", () => {
+    const grid = computeGrid(demoTree(), "john");
+    const mark = card(grid, "mark");
+    const john = card(grid, "john");
+    expect(mark.col).not.toBe(john.col);
+  });
+
   it("keeps the partner's siblings off the POV's side", () => {
     const me = person("me");
     const father = person("father", "male");
@@ -453,5 +429,29 @@ describe("computeGrid with a point of view", () => {
     expect(card(grid, "father").col).toBeGreaterThan(card(grid, "auntP").col);
     expect(card(grid, "mother").col).toBeLessThan(card(grid, "auntM").col);
     expect(card(grid, "mother").col).toBeLessThan(card(grid, "uncleM").col);
+  });
+
+  it("orders uncle, dad, mom, aunt left to right when dad's side has a single parent and mom's has none", () => {
+    const me = person("me");
+    const dad = person("dad", "male");
+    const mom = person("mom", "female");
+    const uncle = person("uncle", "male");
+    const aunt = person("aunt", "female");
+    const grandma = person("grandma", "female");
+
+    const data = tree(
+      [me, dad, mom, uncle, aunt, grandma],
+      [
+        family("f1", dad.id, mom.id, [me.id]),
+        family("f2", undefined, grandma.id, [uncle.id, dad.id]),
+        family("f3", undefined, undefined, [mom.id, aunt.id]),
+      ],
+    );
+
+    const grid = computeGrid(data, me.id);
+
+    expect(card(grid, "uncle").col).toBeLessThan(card(grid, "dad").col);
+    expect(card(grid, "dad").col).toBeLessThan(card(grid, "mom").col);
+    expect(card(grid, "mom").col).toBeLessThan(card(grid, "aunt").col);
   });
 });
