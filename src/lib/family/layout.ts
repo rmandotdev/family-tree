@@ -434,16 +434,26 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
 
     const placed = new Set<Group>();
     let x = 0;
+
+    const isCapRoot = (g: Group) => {
+      if (cols(g) !== 1) return false;
+      const children = childGroups.get(g) ?? [];
+      return children.length === 1 && cols(children[0]) === 2;
+    };
+
     for (const g of nonFlankRoots) {
       const n = cols(g);
       g.col = snapCol(n === 1 ? x + 0.5 : x + n / 2, n);
-      record(g.row, g.col - n / 2, g.col + n / 2);
+      if (!isCapRoot(g)) {
+        record(g.row, g.col - n / 2, g.col + n / 2);
+        placed.add(g);
+      }
       x += n;
-      placed.add(g);
     }
 
     const placeBlock = (g: Group) => {
       if (placed.has(g)) return;
+      if (isCapRoot(g)) return;
       const parents = parentGroups.get(g) ?? [];
       const row = g.row;
 
@@ -492,6 +502,35 @@ export function computeGrid(data: TreeData, pov?: string): GridLayout {
     };
 
     for (const g of order) if (!flankIds.has(g)) placeBlock(g);
+
+    const capTargets = new Map<Group, number>();
+    for (const g of nonFlankRoots) {
+      if (!isCapRoot(g)) continue;
+      const child = (childGroups.get(g) ?? [])[0];
+      const childId = (g.children ?? [])[0];
+      if (!child || !placed.has(child) || !childId) continue;
+      const left = child.col - cols(child) / 2;
+      const childLeft = child.members[0] === childId;
+      capTargets.set(g, childLeft ? left : left + 1);
+    }
+
+    const capByRow = new Map<number, Group[]>();
+    for (const g of capTargets.keys()) {
+      const arr = capByRow.get(g.row) ?? [];
+      arr.push(g);
+      capByRow.set(g.row, arr);
+    }
+
+    for (const [row, caps] of capByRow) {
+      caps.sort((a, b) => (capTargets.get(a) ?? 0) - (capTargets.get(b) ?? 0));
+      for (const g of caps) {
+        const target = capTargets.get(g) ?? 0;
+        const n = cols(g);
+        g.col = snapCol(freeCenter(row, target, target + n, null), n);
+        record(row, g.col - n / 2, g.col + n / 2);
+        placed.add(g);
+      }
+    }
   }
 
   function applyRootFlanks() {
