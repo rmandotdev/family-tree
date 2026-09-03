@@ -625,4 +625,48 @@ describe("computeGrid with a point of view", () => {
       expect(card(grid, dad).col).toBeLessThan(card(grid, mom).col);
     },
   );
+
+  function parentGrandparentTree(extra: {
+    childId: string;
+  }): ReturnType<typeof tree> {
+    const me = person("me");
+    const dad = person("dad", "male");
+    const mom = person("mom", "female");
+    const gd = person("gd", "male");
+    const gmd = person("gmd", "female");
+    const gm = person("gm", "male");
+    const gmm = person("gmm", "female");
+    const gg = person(extra.childId, "male");
+    const families: ReturnType<typeof family>[] = [
+      family("f1", dad.id, mom.id, [me.id]),
+      family("f2", gd.id, gmd.id, [dad.id]),
+      family("f3", gm.id, gmm.id, [mom.id]),
+    ];
+    const parentOf: Record<string, string> = {
+      ggd: gd.id,
+      ggmd: gmd.id,
+      ggm: gm.id,
+      ggmm: gmm.id,
+    };
+    families.push(family("f4", gg.id, undefined, [parentOf[gg.id]]));
+    return tree([me, dad, mom, gd, gmd, gm, gmm, gg], families);
+  }
+
+  it.each([
+    ["ggd", "gd", 0],
+    ["ggmd", "gmd", 1],
+    ["ggm", "gm", 2],
+    ["ggmm", "gmm", 3],
+  ] as const)(
+    "aligns a single great-grandparent %s over their child %s",
+    (ggId, grandparentId, expectedCol) => {
+      const data = parentGrandparentTree({ childId: ggId });
+      const grid = computeGrid(data, "me");
+
+      expect(card(grid, ggId).col).toBe(expectedCol);
+      expect(card(grid, ggId).col).toBe(card(grid, grandparentId).col);
+      // The focal person still sits under their father, keeping the tree centered.
+      expect(card(grid, "me").col).toBe(1);
+    },
+  );
 });
