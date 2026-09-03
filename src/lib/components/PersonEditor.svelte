@@ -54,6 +54,9 @@ let fatherId = $state(
     ? (tree.families[person.parentFamilyId]?.husbandId ?? "")
     : (preset?.fatherId ?? ""),
 );
+let partnerId = $state(
+  person ? (tree.partnerOf(person.id) ?? "") : (preset?.partnerId ?? ""),
+);
 let error = $state("");
 
 const motherOptions = $derived(
@@ -103,6 +106,7 @@ function save() {
   const target = person ?? tree.addPerson(input);
   if (person) tree.updatePerson(target.id, input);
   tree.setParents(target.id, motherId || undefined, fatherId || undefined);
+  tree.setPartner(target.id, partnerId || null);
   onClose();
 }
 
