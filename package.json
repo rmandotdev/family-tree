@@ -20,8 +20,8 @@
     "lightningcss": "1.33.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
-    "@gameroman/config": "0.2.9",
+    "@biomejs/biome": "2.5.13",
+    "@gameroman/config": "0.3.0",
     "@sveltejs/adapter-static": "3.0.10",
     "@sveltejs/kit": "2.70.3",
     "@sveltejs/vite-plugin-svelte": "7.3.0",
