@@ -89,7 +89,7 @@ $effect(() => {
   >
     <span class="max-w-40 truncate">{current?.name ?? "Trees"}</span>
     <svg
-      class="h-4 w-4 shrink-0 text-stone-400"
+      class="size-4 shrink-0 text-stone-400"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -135,7 +135,7 @@ $effect(() => {
               class="cursor-pointer rounded-md p-1.5 text-stone-400 hover:bg-stone-200 hover:text-stone-700"
             >
               <svg
-                class="h-4 w-4"
+                class="size-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -158,7 +158,7 @@ $effect(() => {
               disabled={activeTrees.length <= 1}
             >
               <svg
-                class="h-4 w-4"
+                class="size-4"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -182,7 +182,7 @@ $effect(() => {
         class="flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm font-medium text-sky-600 hover:bg-sky-50"
       >
         <svg
-          class="h-4 w-4"
+          class="size-4"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
