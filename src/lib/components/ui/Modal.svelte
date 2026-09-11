@@ -42,7 +42,7 @@ function handleKeydown(e: KeyboardEvent) {
         aria-label="Close dialog"
       >
         <svg
-          class="h-5 w-5"
+          class="size-5"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"

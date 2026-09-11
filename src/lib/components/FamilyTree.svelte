@@ -227,7 +227,7 @@ function goBack() {
 }
 </script>
 
-<div class="relative flex h-full w-full flex-col overflow-hidden bg-stone-100">
+<div class="relative flex size-full flex-col overflow-hidden bg-stone-100">
   <header
     class="relative z-20 flex h-14 shrink-0 items-center justify-between border-b border-stone-200 bg-white px-4 shadow-sm"
   >
@@ -263,7 +263,7 @@ function goBack() {
         title="Search people"
       >
         <svg
-          class="h-4 w-4"
+          class="size-4"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
