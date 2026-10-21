@@ -151,7 +151,9 @@ $effect(() => {
             </button>
             <button
               type="button"
-              title={activeTrees.length <= 1 ? "You can't delete your only tree" : `Delete ${meta.name}`}
+              title={activeTrees.length <= 1
+                ? "You can't delete your only tree"
+                : `Delete ${meta.name}`}
               aria-label={`Delete ${meta.name}`}
               onclick={() => remove(meta.id)}
               class="cursor-pointer rounded-md p-1.5 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:text-stone-300 disabled:hover:bg-transparent"
