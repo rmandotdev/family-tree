@@ -239,7 +239,11 @@ function goBack() {
       <div
         class="flex items-center gap-1 rounded-lg border border-stone-300 bg-white p-1 shadow-sm"
       >
-        {#each [{ value: "all", label: "All relatives" }, { value: "direct", label: "Direct relatives" }, { value: "directAndChildren", label: "Direct + their children" }] as const as item (item.value)}
+        {#each [
+          { value: "all", label: "All relatives" },
+          { value: "direct", label: "Direct relatives" },
+          { value: "directAndChildren", label: "Direct + their children" },
+        ] as const as item (item.value)}
           <button
             class="cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
             class:bg-stone-900={mode === item.value}
