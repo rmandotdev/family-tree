@@ -23,7 +23,7 @@
     "@biomejs/biome": "2.6.3",
     "@gameroman/config": "0.3.0",
     "@sveltejs/adapter-static": "3.0.10",
-    "@sveltejs/kit": "2.70.3",
+    "@sveltejs/kit": "3.1.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "@tailwindcss/vite": "4.3.3",
     "knip": "6.44.0",
